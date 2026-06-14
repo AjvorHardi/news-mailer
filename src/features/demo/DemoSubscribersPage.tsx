@@ -1,4 +1,4 @@
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,6 +16,7 @@ import {
   useUpdateDemoSubscriber,
   useUpsertDemoSubscriber,
 } from './useDemoSubscribers';
+import { useResetDemoData } from './useDemoOverview';
 import type { z } from 'zod';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
@@ -42,13 +43,18 @@ export function DemoSubscribersPage() {
   const updateSubscriber = useUpdateDemoSubscriber();
   const setSubscriberStatus = useSetDemoSubscriberStatus();
   const removeSubscriber = useRemoveDemoSubscriber();
+  const resetDemoData = useResetDemoData();
   const [editingSubscriber, setEditingSubscriber] = useState<Subscriber | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const sourceForms = useMemo(() => sourceFormsQuery.data ?? [], [sourceFormsQuery.data]);
   const formsById = useMemo(() => new Map(sourceForms.map((form) => [form.id, form.internalName])), [sourceForms]);
   const isMutating =
-    upsertSubscriber.isPending || updateSubscriber.isPending || setSubscriberStatus.isPending || removeSubscriber.isPending;
+    upsertSubscriber.isPending ||
+    updateSubscriber.isPending ||
+    setSubscriberStatus.isPending ||
+    removeSubscriber.isPending ||
+    resetDemoData.isPending;
 
   function openCreateForm() {
     setEditingSubscriber(null);
@@ -67,12 +73,24 @@ export function DemoSubscribersPage() {
         title="Subscriber list"
         description="Manage seeded subscribers in localStorage. Changes persist until the demo is reset."
         actions={
-          <Button type="button" onClick={openCreateForm}>
-            <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-            Add subscriber
-          </Button>
+          <>
+            <Button type="button" variant="secondary" onClick={() => resetDemoData.mutate()} disabled={isMutating}>
+              <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+              Reset demo
+            </Button>
+            <Button type="button" onClick={openCreateForm} disabled={isMutating}>
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Add subscriber
+            </Button>
+          </>
         }
       />
+
+      {setSubscriberStatus.error || removeSubscriber.error || resetDemoData.error ? (
+        <div className="rounded-lg border border-red-200 bg-white p-4 text-sm text-red-600">
+          {setSubscriberStatus.error?.message ?? removeSubscriber.error?.message ?? resetDemoData.error?.message}
+        </div>
+      ) : null}
 
       {isFormOpen ? (
         <DemoSubscriberForm
@@ -105,7 +123,15 @@ export function DemoSubscribersPage() {
       ) : null}
 
       {subscribersQuery.isError || sourceFormsQuery.isError ? (
-        <EmptyState title="Subscribers could not be loaded" description="Reset the demo data from the overview and try again." />
+        <EmptyState
+          title="Subscribers could not be loaded"
+          description="Reset the demo data and try again."
+          action={
+            <Button type="button" variant="secondary" onClick={() => resetDemoData.mutate()} disabled={isMutating}>
+              Reset demo
+            </Button>
+          }
+        />
       ) : null}
 
       {subscribersQuery.data && subscribersQuery.data.length === 0 ? (
