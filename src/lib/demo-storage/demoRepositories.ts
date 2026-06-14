@@ -141,6 +141,40 @@ class DemoSubscriberRepository implements SubscriberRepository {
     );
   }
 
+  async create(newsletterId: Id, input: UpsertSubscriberInput): Promise<Subscriber> {
+    return mutateDemoState((state) => {
+      requireNewsletter(state, newsletterId);
+      requireSameNewsletterForm(state, newsletterId, input.sourceFormId);
+
+      const emailNormalized = normalizeSubscriberEmail(input.email);
+      const existingSubscriber = state.subscribers.find(
+        (subscriber) => subscriber.newsletterId === newsletterId && subscriber.emailNormalized === emailNormalized,
+      );
+
+      if (existingSubscriber) {
+        throw new Error('A subscriber with this email already exists');
+      }
+
+      const timestamp = now();
+      const subscriber: Subscriber = {
+        id: createId('subscriber'),
+        newsletterId,
+        email: input.email.trim(),
+        emailNormalized,
+        name: input.name ?? null,
+        status: input.status ?? 'subscribed',
+        sourceFormId: input.sourceFormId ?? null,
+        unsubscribeToken: createId('unsubscribe'),
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        unsubscribedAt: input.status === 'unsubscribed' ? timestamp : null,
+      };
+
+      state.subscribers.push(subscriber);
+      return subscriber;
+    });
+  }
+
   async upsert(newsletterId: Id, input: UpsertSubscriberInput): Promise<Subscriber> {
     return mutateDemoState((state) => {
       requireNewsletter(state, newsletterId);

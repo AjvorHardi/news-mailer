@@ -64,6 +64,7 @@ export interface NewsletterRepository {
 export interface SubscriberRepository {
   list(newsletterId: Id): Promise<Subscriber[]>;
   get(newsletterId: Id, subscriberId: Id): Promise<Subscriber | null>;
+  create(newsletterId: Id, input: UpsertSubscriberInput): Promise<Subscriber>;
   upsert(newsletterId: Id, input: UpsertSubscriberInput): Promise<Subscriber>;
   update(newsletterId: Id, subscriberId: Id, input: UpsertSubscriberInput): Promise<Subscriber>;
   remove(newsletterId: Id, subscriberId: Id): Promise<void>;

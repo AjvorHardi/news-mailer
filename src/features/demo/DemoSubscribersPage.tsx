@@ -9,12 +9,12 @@ import { Input } from '../../shared/ui/Input';
 import { subscriberInputSchema } from '../../shared/schemas/domainSchemas';
 import type { SignupForm, Subscriber } from '../../shared/types/domain';
 import {
+  useCreateDemoSubscriber,
   useDemoSubscriberSourceForms,
   useDemoSubscribers,
   useRemoveDemoSubscriber,
   useSetDemoSubscriberStatus,
   useUpdateDemoSubscriber,
-  useUpsertDemoSubscriber,
 } from './useDemoSubscribers';
 import { useResetDemoData } from './useDemoOverview';
 import type { z } from 'zod';
@@ -39,7 +39,7 @@ type SubscriberFormValues = z.output<typeof subscriberInputSchema>;
 export function DemoSubscribersPage() {
   const subscribersQuery = useDemoSubscribers();
   const sourceFormsQuery = useDemoSubscriberSourceForms();
-  const upsertSubscriber = useUpsertDemoSubscriber();
+  const createSubscriber = useCreateDemoSubscriber();
   const updateSubscriber = useUpdateDemoSubscriber();
   const setSubscriberStatus = useSetDemoSubscriberStatus();
   const removeSubscriber = useRemoveDemoSubscriber();
@@ -50,20 +50,31 @@ export function DemoSubscribersPage() {
   const sourceForms = useMemo(() => sourceFormsQuery.data ?? [], [sourceFormsQuery.data]);
   const formsById = useMemo(() => new Map(sourceForms.map((form) => [form.id, form.internalName])), [sourceForms]);
   const isMutating =
-    upsertSubscriber.isPending ||
+    createSubscriber.isPending ||
     updateSubscriber.isPending ||
     setSubscriberStatus.isPending ||
     removeSubscriber.isPending ||
     resetDemoData.isPending;
 
   function openCreateForm() {
+    createSubscriber.reset();
+    updateSubscriber.reset();
     setEditingSubscriber(null);
     setIsFormOpen(true);
   }
 
   function openEditForm(subscriber: Subscriber) {
+    createSubscriber.reset();
+    updateSubscriber.reset();
     setEditingSubscriber(subscriber);
     setIsFormOpen(true);
+  }
+
+  function closeForm() {
+    createSubscriber.reset();
+    updateSubscriber.reset();
+    setIsFormOpen(false);
+    setEditingSubscriber(null);
   }
 
   return (
@@ -96,7 +107,7 @@ export function DemoSubscribersPage() {
         <DemoSubscriberForm
           subscriber={editingSubscriber}
           sourceForms={sourceForms}
-          onCancel={() => setIsFormOpen(false)}
+          onCancel={closeForm}
           onSubmit={async (values) => {
             const input = {
               ...values,
@@ -107,14 +118,13 @@ export function DemoSubscribersPage() {
             if (editingSubscriber) {
               await updateSubscriber.mutateAsync({ subscriberId: editingSubscriber.id, input });
             } else {
-              await upsertSubscriber.mutateAsync(input);
+              await createSubscriber.mutateAsync(input);
             }
 
-            setIsFormOpen(false);
-            setEditingSubscriber(null);
+            closeForm();
           }}
-          error={upsertSubscriber.error ?? updateSubscriber.error}
-          isSubmitting={upsertSubscriber.isPending || updateSubscriber.isPending}
+          error={createSubscriber.error ?? updateSubscriber.error}
+          isSubmitting={createSubscriber.isPending || updateSubscriber.isPending}
         />
       ) : null}
 
