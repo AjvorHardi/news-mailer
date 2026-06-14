@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, Pencil, Plus, RotateCcw, Trash2, UserCheck, UserMinus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import clsx from 'clsx';
@@ -87,21 +87,45 @@ export function DemoSubscribersPage() {
     );
   }
 
+  function toggleSubscriberStatus(subscriber: Subscriber) {
+    setSubscriberStatus.mutate({
+      subscriberId: subscriber.id,
+      status: subscriber.status === 'subscribed' ? 'unsubscribed' : 'subscribed',
+    });
+  }
+
+  function removeSubscriberById(subscriber: Subscriber) {
+    removeSubscriber.mutate(subscriber.id);
+  }
+
   return (
     <div className="space-y-8">
       <PageHeader
+        actionsLayout="responsive-inline"
         eyebrow="Demo subscribers"
         title="Subscriber list"
-        description="Manage seeded subscribers in localStorage. Changes persist until the demo is reset."
         actions={
           <>
-            <Button type="button" variant="secondary" onClick={() => resetDemoData.mutate()} disabled={isMutating}>
-              <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
-              Reset demo
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-10 w-10 px-0 md:w-auto md:px-4"
+              aria-label="Reset demo"
+              onClick={() => resetDemoData.mutate()}
+              disabled={isMutating}
+            >
+              <RotateCcw className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
+              <span className="hidden md:inline">Reset demo</span>
             </Button>
-            <Button type="button" onClick={openCreateForm} disabled={isMutating}>
-              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-              Add subscriber
+            <Button
+              type="button"
+              className="h-10 w-10 px-0 md:w-auto md:px-4"
+              aria-label="Add subscriber"
+              onClick={openCreateForm}
+              disabled={isMutating}
+            >
+              <Plus className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
+              <span className="hidden md:inline">Add subscriber</span>
             </Button>
           </>
         }
@@ -162,186 +186,278 @@ export function DemoSubscribersPage() {
       ) : null}
 
       {subscribersQuery.data && subscribersQuery.data.length > 0 ? (
-        <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white md:hidden">
-          <div className="divide-y divide-neutral-200">
-            {subscribersQuery.data.map((subscriber) => {
-              const isExpanded = expandedSubscriberIds.includes(subscriber.id);
-              const sourceLabel = subscriber.sourceFormId
-                ? formsById.get(subscriber.sourceFormId) ?? 'Unknown form'
-                : 'Manual';
-
-              return (
-                <article key={subscriber.id}>
-                  <div className="flex items-start gap-2 p-3">
-                    <button
-                      type="button"
-                      aria-expanded={isExpanded}
-                      onClick={() => toggleExpandedRow(subscriber.id)}
-                      className="flex min-w-0 flex-1 items-start justify-between gap-2 rounded-md text-left focus:ring-2 focus:ring-neutral-950 focus:outline-none"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium text-neutral-950">{subscriber.email}</span>
-                        <span className="mt-1 block truncate text-xs text-neutral-500">{subscriber.name ?? 'No name'}</span>
-                      </span>
-                      {isExpanded ? (
-                        <ChevronUp className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500" aria-hidden="true" />
-                      ) : (
-                        <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500" aria-hidden="true" />
-                      )}
-                    </button>
-
-                    <div className="flex shrink-0 items-center gap-1">
-                      <IconButton
-                        label={`Edit ${subscriber.email}`}
-                        disabled={isMutating}
-                        onClick={() => openEditForm(subscriber)}
-                      >
-                        <Pencil className="h-4 w-4" aria-hidden="true" />
-                      </IconButton>
-                      <IconButton
-                        label={
-                          subscriber.status === 'subscribed'
-                            ? `Unsubscribe ${subscriber.email}`
-                            : `Resubscribe ${subscriber.email}`
-                        }
-                        disabled={isMutating}
-                        onClick={() =>
-                          setSubscriberStatus.mutate({
-                            subscriberId: subscriber.id,
-                            status: subscriber.status === 'subscribed' ? 'unsubscribed' : 'subscribed',
-                          })
-                        }
-                      >
-                        {subscriber.status === 'subscribed' ? (
-                          <UserMinus className="h-4 w-4" aria-hidden="true" />
-                        ) : (
-                          <UserCheck className="h-4 w-4" aria-hidden="true" />
-                        )}
-                      </IconButton>
-                      <IconButton
-                        label={`Remove ${subscriber.email}`}
-                        variant="danger"
-                        disabled={isMutating}
-                        onClick={() => removeSubscriber.mutate(subscriber.id)}
-                      >
-                        <Trash2 className="h-4 w-4" aria-hidden="true" />
-                      </IconButton>
-                    </div>
-                  </div>
-
-                  {isExpanded ? (
-                    <dl className="grid grid-cols-2 gap-3 border-t border-neutral-200 bg-neutral-50 px-3 py-4 text-xs">
-                      <div>
-                        <dt className="font-medium text-neutral-500">Status</dt>
-                        <dd className="mt-1 text-neutral-950">{getStatusLabel(subscriber.status)}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-medium text-neutral-500">Source</dt>
-                        <dd className="mt-1 text-neutral-950">{sourceLabel}</dd>
-                      </div>
-                      <div>
-                        <dt className="font-medium text-neutral-500">Created</dt>
-                        <dd className="mt-1 text-neutral-950">{formatDate(subscriber.createdAt)}</dd>
-                      </div>
-                      <div className="min-w-0">
-                        <dt className="font-medium text-neutral-500">Normalized email</dt>
-                        <dd className="font-mono-ui mt-1 truncate text-neutral-950">{subscriber.emailNormalized}</dd>
-                      </div>
-                    </dl>
-                  ) : null}
-                </article>
-              );
-            })}
-          </div>
-        </section>
+        <CompactSubscribersList
+          expandedSubscriberIds={expandedSubscriberIds}
+          formsById={formsById}
+          isMutating={isMutating}
+          onEdit={openEditForm}
+          onRemove={removeSubscriberById}
+          onToggleExpanded={toggleExpandedRow}
+          onToggleStatus={toggleSubscriberStatus}
+          subscribers={subscribersQuery.data}
+        />
       ) : null}
 
       {subscribersQuery.data && subscribersQuery.data.length > 0 ? (
-        <section className="hidden overflow-hidden rounded-lg border border-neutral-200 bg-white md:block">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200 text-left text-sm">
-              <thead className="bg-neutral-50 text-xs font-semibold tracking-[0.12em] text-neutral-500 uppercase">
-                <tr>
-                  <th scope="col" className="px-4 py-3">
-                    Email
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    Name
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    Status
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    Source
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    Created
-                  </th>
-                  <th scope="col" className="px-4 py-3 text-right">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-200">
-                {subscribersQuery.data.map((subscriber) => (
-                  <tr key={subscriber.id} className="align-top">
-                    <td className="px-4 py-4">
-                      <div className="font-medium text-neutral-950">{subscriber.email}</div>
-                      <div className="font-mono-ui mt-1 text-xs text-neutral-500">{subscriber.emailNormalized}</div>
-                    </td>
-                    <td className="px-4 py-4 text-neutral-700">{subscriber.name ?? '-'}</td>
-                    <td className="px-4 py-4">
-                      <span className="inline-flex rounded-md border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700">
-                        {getStatusLabel(subscriber.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-neutral-700">
-                      {subscriber.sourceFormId ? formsById.get(subscriber.sourceFormId) ?? 'Unknown form' : 'Manual'}
-                    </td>
-                    <td className="px-4 py-4 text-neutral-700">{formatDate(subscriber.createdAt)}</td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <Button type="button" variant="secondary" disabled={isMutating} onClick={() => openEditForm(subscriber)}>
-                          <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
-                          Edit
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          disabled={isMutating}
-                          onClick={() =>
-                            setSubscriberStatus.mutate({
-                              subscriberId: subscriber.id,
-                              status: subscriber.status === 'subscribed' ? 'unsubscribed' : 'subscribed',
-                            })
-                          }
-                        >
-                          {subscriber.status === 'subscribed' ? 'Unsubscribe' : 'Resubscribe'}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="danger"
-                          disabled={isMutating}
-                          onClick={() => removeSubscriber.mutate(subscriber.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                          Remove
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <DesktopSubscribersTable
+          formsById={formsById}
+          isMutating={isMutating}
+          onEdit={openEditForm}
+          onRemove={removeSubscriberById}
+          onToggleStatus={toggleSubscriberStatus}
+          subscribers={subscribersQuery.data}
+        />
       ) : null}
     </div>
   );
 }
 
+type SubscriberListProps = {
+  formsById: Map<string, string>;
+  isMutating: boolean;
+  onEdit: (subscriber: Subscriber) => void;
+  onRemove: (subscriber: Subscriber) => void;
+  onToggleStatus: (subscriber: Subscriber) => void;
+  subscribers: Subscriber[];
+};
+
+type CompactSubscribersListProps = SubscriberListProps & {
+  expandedSubscriberIds: string[];
+  onToggleExpanded: (subscriberId: string) => void;
+};
+
+function CompactSubscribersList({
+  expandedSubscriberIds,
+  formsById,
+  isMutating,
+  onEdit,
+  onRemove,
+  onToggleExpanded,
+  onToggleStatus,
+  subscribers,
+}: CompactSubscribersListProps) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white min-[1120px]:hidden">
+      <div className="divide-y divide-neutral-200">
+        {subscribers.map((subscriber) => (
+          <CompactSubscriberRow
+            key={subscriber.id}
+            formsById={formsById}
+            isExpanded={expandedSubscriberIds.includes(subscriber.id)}
+            isMutating={isMutating}
+            onEdit={onEdit}
+            onRemove={onRemove}
+            onToggleExpanded={onToggleExpanded}
+            onToggleStatus={onToggleStatus}
+            subscriber={subscriber}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+type CompactSubscriberRowProps = Omit<SubscriberListProps, 'subscribers'> & {
+  isExpanded: boolean;
+  onToggleExpanded: (subscriberId: string) => void;
+  subscriber: Subscriber;
+};
+
+function CompactSubscriberRow({
+  formsById,
+  isExpanded,
+  isMutating,
+  onEdit,
+  onRemove,
+  onToggleExpanded,
+  onToggleStatus,
+  subscriber,
+}: CompactSubscriberRowProps) {
+  const sourceLabel = getSourceLabel(subscriber, formsById);
+
+  return (
+    <article>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 p-3 min-[600px]:grid-cols-[minmax(0,1fr)_auto_auto] min-[800px]:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+        <button
+          type="button"
+          aria-expanded={isExpanded}
+          onClick={() => onToggleExpanded(subscriber.id)}
+          className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md text-left focus:ring-2 focus:ring-neutral-950 focus:outline-none"
+        >
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-medium text-neutral-950">{subscriber.email}</span>
+            <span className="mt-1 block truncate text-xs text-neutral-500">{subscriber.name ?? 'No name'}</span>
+          </span>
+          {isExpanded ? (
+            <ChevronUp className="h-4 w-4 shrink-0 text-neutral-500" aria-hidden="true" />
+          ) : (
+            <ChevronDown className="h-4 w-4 shrink-0 text-neutral-500" aria-hidden="true" />
+          )}
+        </button>
+        <div className="hidden justify-self-center min-[600px]:block">
+          <StatusBadge status={subscriber.status} />
+        </div>
+        <div className="hidden justify-self-center text-xs text-neutral-500 min-[800px]:block">
+          {formatDate(subscriber.createdAt)}
+        </div>
+        <SubscriberActions
+          isMutating={isMutating}
+          onEdit={onEdit}
+          onRemove={onRemove}
+          onToggleStatus={onToggleStatus}
+          subscriber={subscriber}
+        />
+      </div>
+
+      {isExpanded ? (
+        <dl className="grid grid-cols-2 gap-3 border-t border-neutral-200 bg-neutral-50 px-3 py-4 text-xs">
+          <div>
+            <dt className="font-medium text-neutral-500">Status</dt>
+            <dd className="mt-1 text-neutral-950">{getStatusLabel(subscriber.status)}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-neutral-500">Source</dt>
+            <dd className="mt-1 text-neutral-950">{sourceLabel}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-neutral-500">Created</dt>
+            <dd className="mt-1 text-neutral-950">{formatDate(subscriber.createdAt)}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="font-medium text-neutral-500">Normalized email</dt>
+            <dd className="font-mono-ui mt-1 truncate text-neutral-950">{subscriber.emailNormalized}</dd>
+          </div>
+        </dl>
+      ) : null}
+    </article>
+  );
+}
+
+function DesktopSubscribersTable({
+  formsById,
+  isMutating,
+  onEdit,
+  onRemove,
+  onToggleStatus,
+  subscribers,
+}: SubscriberListProps) {
+  return (
+    <section className="hidden overflow-hidden rounded-lg border border-neutral-200 bg-white min-[1120px]:block">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-neutral-200 text-left text-sm">
+          <thead className="bg-neutral-50 text-xs font-semibold tracking-[0.12em] text-neutral-500 uppercase">
+            <tr>
+              <th scope="col" className="px-4 py-3 text-center">
+                Email
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
+                Name
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
+                Status
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
+                Source
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
+                Created
+              </th>
+              <th scope="col" className="px-4 py-3 text-center">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-neutral-200">
+            {subscribers.map((subscriber) => (
+              <tr key={subscriber.id} className="align-middle">
+                <td className="px-4 py-4 text-center align-middle">
+                  <div className="font-medium text-neutral-950">{subscriber.email}</div>
+                </td>
+                <td className="px-4 py-4 text-center align-middle text-neutral-700">{subscriber.name ?? '-'}</td>
+                <td className="px-4 py-4 text-center align-middle">
+                  <StatusBadge status={subscriber.status} />
+                </td>
+                <td className="px-4 py-4 text-center align-middle text-neutral-700">
+                  {getSourceLabel(subscriber, formsById)}
+                </td>
+                <td className="px-4 py-4 text-center align-middle text-neutral-700">{formatDate(subscriber.createdAt)}</td>
+                <td className="px-4 py-4 text-center align-middle">
+                  <SubscriberActions
+                    isMutating={isMutating}
+                    onEdit={onEdit}
+                    onRemove={onRemove}
+                    onToggleStatus={onToggleStatus}
+                    subscriber={subscriber}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function getSourceLabel(subscriber: Subscriber, formsById: Map<string, string>) {
+  return subscriber.sourceFormId ? formsById.get(subscriber.sourceFormId) ?? 'Unknown form' : 'Manual';
+}
+
+function StatusBadge({ status }: { status: Subscriber['status'] }) {
+  return (
+    <span className="inline-flex rounded-md border border-neutral-300 px-2.5 py-1 text-xs font-medium text-neutral-700">
+      {getStatusLabel(status)}
+    </span>
+  );
+}
+
+type SubscriberActionsProps = {
+  isMutating: boolean;
+  onEdit: (subscriber: Subscriber) => void;
+  onRemove: (subscriber: Subscriber) => void;
+  onToggleStatus: (subscriber: Subscriber) => void;
+  subscriber: Subscriber;
+};
+
+function SubscriberActions({
+  isMutating,
+  onEdit,
+  onRemove,
+  onToggleStatus,
+  subscriber,
+}: SubscriberActionsProps) {
+  const statusActionLabel = subscriber.status === 'subscribed' ? 'Unsubscribe' : 'Resubscribe';
+
+  return (
+    <div className="flex items-center justify-center gap-1">
+      <IconButton label={`Edit ${subscriber.email}`} disabled={isMutating} onClick={() => onEdit(subscriber)}>
+        <Pencil className="h-4 w-4" aria-hidden="true" />
+      </IconButton>
+      <IconButton
+        label={`${statusActionLabel} ${subscriber.email}`}
+        disabled={isMutating}
+        onClick={() => onToggleStatus(subscriber)}
+      >
+        {subscriber.status === 'subscribed' ? (
+          <UserMinus className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <UserCheck className="h-4 w-4" aria-hidden="true" />
+        )}
+      </IconButton>
+      <IconButton
+        label={`Remove ${subscriber.email}`}
+        variant="danger"
+        disabled={isMutating}
+        onClick={() => onRemove(subscriber)}
+      >
+        <Trash2 className="h-4 w-4" aria-hidden="true" />
+      </IconButton>
+    </div>
+  );
+}
+
 type IconButtonProps = {
-  children: React.ReactNode;
+  children: ReactNode;
   disabled?: boolean;
   label: string;
   onClick: () => void;
