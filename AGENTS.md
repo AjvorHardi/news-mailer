@@ -278,6 +278,11 @@ If checks cannot be run:
 
 * Explain what was skipped and why.
 
+Dev server:
+
+* Do not start or stop the local dev server unless the user explicitly asks.
+* If the dev server is needed for manual review, tell the user which command and URL to use instead.
+
 ## Communication Style
 
 In final responses:
@@ -354,6 +359,9 @@ Examples:
 
 Codex may make local commits only during implementation work.
 
+* For each app phase, preview a small commit breakdown before implementation when practical.
+* During phase implementation, split work into meaningful milestone commits and commit regularly.
+* Each milestone commit should be independently reviewable and should pass the required checks unless the user explicitly approves otherwise.
 * Commit after meaningful, working milestones.
 * Prefer fewer clean commits over many noisy commits.
 * Do not commit broken code.
