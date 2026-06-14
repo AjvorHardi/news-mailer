@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { DEMO_NEWSLETTER_ID } from '../../lib/demo-storage';
 import { PageHeader } from '../../shared/ui/PageHeader';
 
 export function DemoHomePage() {
@@ -10,10 +11,10 @@ export function DemoHomePage() {
         description="Seeded demo data, localStorage persistence, and simulated sending will be added in the next demo phases."
         actions={
           <Link
-            to="/app/newsletters/demo-newsletter"
+            to="/demo"
             className="rounded-md bg-neutral-950 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 focus:ring-2 focus:ring-neutral-950 focus:ring-offset-2 focus:outline-none"
           >
-            Open shell
+            Open demo
           </Link>
         }
       />
@@ -25,6 +26,7 @@ export function DemoHomePage() {
           </div>
         ))}
       </div>
+      <p className="font-mono-ui mt-6 text-xs text-neutral-500">Seed newsletter: {DEMO_NEWSLETTER_ID}</p>
     </section>
   );
 }

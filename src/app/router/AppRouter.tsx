@@ -6,6 +6,8 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { LoginPage } from '../../features/auth/LoginPage';
 import { RegisterPage } from '../../features/auth/RegisterPage';
 import { DemoHomePage } from '../../features/demo/DemoHomePage';
+import { DemoOverviewPage } from '../../features/demo/DemoOverviewPage';
+import { DemoWorkspaceRoute } from '../../features/demo/DemoWorkspaceRoute';
 import { MarketingHomePage } from '../../features/marketing/MarketingHomePage';
 import { PublicSubscribePage } from '../../features/public-subscribe/PublicSubscribePage';
 import { PublicUnsubscribePage } from '../../features/public-unsubscribe/PublicUnsubscribePage';
@@ -23,9 +25,22 @@ export function AppRouter() {
     <Routes>
       <Route element={<PublicLayout />}>
         <Route index element={<MarketingHomePage />} />
-        <Route path="demo" element={<DemoHomePage />} />
         <Route path="subscribe/:formSlug" element={<PublicSubscribePage />} />
         <Route path="unsubscribe/:token" element={<PublicUnsubscribePage />} />
+      </Route>
+
+      <Route path="demo" element={<DemoWorkspaceRoute />}>
+        <Route index element={<DemoOverviewPage />} />
+        <Route path="subscribers" element={<SubscribersPage />} />
+        <Route path="forms" element={<FormsPage />} />
+        <Route path="segments" element={<SegmentsPage />} />
+        <Route path="campaigns" element={<CampaignsPage />} />
+        <Route path="activity" element={<ActivityPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+
+      <Route element={<PublicLayout />}>
+        <Route path="demo-intro" element={<DemoHomePage />} />
       </Route>
 
       <Route element={<AuthLayout />}>
