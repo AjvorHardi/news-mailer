@@ -5,7 +5,7 @@ export function AuthLayout() {
     <div className="min-h-screen bg-neutral-50 text-neutral-950">
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link to="/" className="text-sm font-semibold tracking-[0.18em] uppercase">
+          <Link to="/" className="font-display text-sm font-semibold tracking-[0.18em] uppercase">
             NEWS-MAILER
           </Link>
           <Link

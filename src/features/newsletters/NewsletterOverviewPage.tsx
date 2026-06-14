@@ -15,13 +15,13 @@ export function NewsletterOverviewPage() {
           ['Campaigns', '0'],
         ].map(([label, value]) => (
           <div key={label} className="rounded-lg border border-neutral-200 bg-white p-5">
-            <p className="text-3xl font-semibold text-neutral-950">{value}</p>
+            <p className="font-mono-ui text-3xl font-semibold text-neutral-950">{value}</p>
             <p className="mt-1 text-sm text-neutral-500">{label}</p>
           </div>
         ))}
       </div>
       <section className="rounded-lg border border-neutral-200 bg-white p-5">
-        <h2 className="text-base font-semibold text-neutral-950">Recent campaigns</h2>
+        <h2 className="font-display text-base font-semibold text-neutral-950">Recent campaigns</h2>
         <p className="mt-2 text-sm text-neutral-600">Draft and sent campaign summaries will be added in later phases.</p>
       </section>
     </div>

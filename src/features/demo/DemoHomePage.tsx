@@ -20,7 +20,7 @@ export function DemoHomePage() {
       <div className="mt-8 grid gap-4 md:grid-cols-3">
         {['Subscribers', 'Signup forms', 'Campaign activity'].map((item) => (
           <div key={item} className="border border-neutral-200 bg-white p-5">
-            <h2 className="text-base font-semibold text-neutral-950">{item}</h2>
+            <h2 className="font-display text-base font-semibold text-neutral-950">{item}</h2>
             <p className="mt-2 text-sm leading-6 text-neutral-600">Demo functionality placeholder.</p>
           </div>
         ))}

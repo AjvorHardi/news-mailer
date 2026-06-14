@@ -4,8 +4,8 @@ export function MarketingHomePage() {
   return (
     <section className="mx-auto grid min-h-[calc(100vh-73px)] max-w-6xl content-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
       <div>
-        <p className="text-xs font-semibold tracking-[0.18em] text-neutral-500 uppercase">Newsletter SaaS MVP</p>
-        <h1 className="mt-5 max-w-3xl text-5xl font-semibold tracking-normal text-neutral-950 sm:text-6xl">
+        <p className="font-display text-xs font-semibold tracking-[0.18em] text-neutral-500 uppercase">Newsletter SaaS MVP</p>
+        <h1 className="font-display mt-5 max-w-3xl text-5xl font-semibold tracking-normal text-neutral-950 sm:text-6xl">
           NEWS-MAILER
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-neutral-600">
@@ -39,7 +39,7 @@ export function MarketingHomePage() {
             ['Campaigns', '12'],
           ].map(([label, value]) => (
             <div key={label} className="border border-neutral-200 p-4">
-              <p className="text-2xl font-semibold text-neutral-950">{value}</p>
+              <p className="font-mono-ui text-2xl font-semibold text-neutral-950">{value}</p>
               <p className="mt-1 text-xs text-neutral-500">{label}</p>
             </div>
           ))}

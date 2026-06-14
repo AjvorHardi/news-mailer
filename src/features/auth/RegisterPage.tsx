@@ -5,7 +5,7 @@ import { Input } from '../../shared/ui/Input';
 export function RegisterPage() {
   return (
     <section className="w-full rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-semibold text-neutral-950">Create account</h1>
+      <h1 className="font-display text-2xl font-semibold text-neutral-950">Create account</h1>
       <p className="mt-2 text-sm leading-6 text-neutral-600">
         The pricing slider and Supabase signup flow will be added after the shell is reviewed.
       </p>

@@ -22,7 +22,7 @@ export function AppLayout() {
     <div className="min-h-screen bg-neutral-50 text-neutral-950">
       <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white lg:hidden">
         <div className="flex h-16 items-center justify-between px-4">
-          <Link to="/app" className="text-sm font-semibold tracking-[0.18em] uppercase">
+          <Link to="/app" className="font-display text-sm font-semibold tracking-[0.18em] uppercase">
             NEWS-MAILER
           </Link>
           <button
@@ -56,7 +56,7 @@ export function AppLayout() {
           )}
         >
           <div className="flex h-16 items-center justify-between border-b border-neutral-200 px-4">
-            <Link to="/app" className="text-sm font-semibold tracking-[0.18em] uppercase">
+            <Link to="/app" className="font-display text-sm font-semibold tracking-[0.18em] uppercase">
               NEWS-MAILER
             </Link>
             <button
@@ -90,7 +90,7 @@ function SidebarContent({ basePath, onNavigate }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-neutral-200 px-6 py-5">
-        <Link to="/app" className="text-sm font-semibold tracking-[0.18em] uppercase">
+        <Link to="/app" className="font-display text-sm font-semibold tracking-[0.18em] uppercase">
           NEWS-MAILER
         </Link>
         <p className="mt-3 text-sm text-neutral-500">Newsletter workspace</p>
@@ -107,7 +107,7 @@ function SidebarContent({ basePath, onNavigate }: SidebarContentProps) {
               onClick={onNavigate}
               className={({ isActive }) =>
                 clsx(
-                  'block rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-neutral-950 focus:outline-none',
+                  'font-display block rounded-md px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-neutral-950 focus:outline-none',
                   isActive
                     ? 'bg-neutral-950 text-white'
                     : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950',

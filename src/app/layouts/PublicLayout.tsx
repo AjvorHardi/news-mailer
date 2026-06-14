@@ -5,7 +5,7 @@ export function PublicLayout() {
     <div className="min-h-screen bg-white text-neutral-950">
       <header className="border-b border-neutral-200">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <Link to="/" className="text-sm font-semibold tracking-[0.18em] text-neutral-950 uppercase">
+          <Link to="/" className="font-display text-sm font-semibold tracking-[0.18em] text-neutral-950 uppercase">
             NEWS-MAILER
           </Link>
           <nav className="flex items-center gap-2 text-sm">
