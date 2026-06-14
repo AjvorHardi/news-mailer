@@ -1,7 +1,8 @@
-import { Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Pencil, Plus, RotateCcw, Trash2, UserCheck, UserMinus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import clsx from 'clsx';
 import { Button } from '../../shared/ui/Button';
 import { EmptyState } from '../../shared/ui/EmptyState';
 import { PageHeader } from '../../shared/ui/PageHeader';
@@ -45,6 +46,7 @@ export function DemoSubscribersPage() {
   const removeSubscriber = useRemoveDemoSubscriber();
   const resetDemoData = useResetDemoData();
   const [editingSubscriber, setEditingSubscriber] = useState<Subscriber | null>(null);
+  const [expandedSubscriberIds, setExpandedSubscriberIds] = useState<string[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const sourceForms = useMemo(() => sourceFormsQuery.data ?? [], [sourceFormsQuery.data]);
@@ -75,6 +77,14 @@ export function DemoSubscribersPage() {
     updateSubscriber.reset();
     setIsFormOpen(false);
     setEditingSubscriber(null);
+  }
+
+  function toggleExpandedRow(subscriberId: string) {
+    setExpandedSubscriberIds((currentIds) =>
+      currentIds.includes(subscriberId)
+        ? currentIds.filter((currentId) => currentId !== subscriberId)
+        : [...currentIds, subscriberId],
+    );
   }
 
   return (
@@ -152,7 +162,102 @@ export function DemoSubscribersPage() {
       ) : null}
 
       {subscribersQuery.data && subscribersQuery.data.length > 0 ? (
-        <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+        <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white md:hidden">
+          <div className="divide-y divide-neutral-200">
+            {subscribersQuery.data.map((subscriber) => {
+              const isExpanded = expandedSubscriberIds.includes(subscriber.id);
+              const sourceLabel = subscriber.sourceFormId
+                ? formsById.get(subscriber.sourceFormId) ?? 'Unknown form'
+                : 'Manual';
+
+              return (
+                <article key={subscriber.id}>
+                  <div className="flex items-start gap-2 p-3">
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      onClick={() => toggleExpandedRow(subscriber.id)}
+                      className="flex min-w-0 flex-1 items-start justify-between gap-2 rounded-md text-left focus:ring-2 focus:ring-neutral-950 focus:outline-none"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-neutral-950">{subscriber.email}</span>
+                        <span className="mt-1 block truncate text-xs text-neutral-500">{subscriber.name ?? 'No name'}</span>
+                      </span>
+                      {isExpanded ? (
+                        <ChevronUp className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500" aria-hidden="true" />
+                      ) : (
+                        <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-neutral-500" aria-hidden="true" />
+                      )}
+                    </button>
+
+                    <div className="flex shrink-0 items-center gap-1">
+                      <IconButton
+                        label={`Edit ${subscriber.email}`}
+                        disabled={isMutating}
+                        onClick={() => openEditForm(subscriber)}
+                      >
+                        <Pencil className="h-4 w-4" aria-hidden="true" />
+                      </IconButton>
+                      <IconButton
+                        label={
+                          subscriber.status === 'subscribed'
+                            ? `Unsubscribe ${subscriber.email}`
+                            : `Resubscribe ${subscriber.email}`
+                        }
+                        disabled={isMutating}
+                        onClick={() =>
+                          setSubscriberStatus.mutate({
+                            subscriberId: subscriber.id,
+                            status: subscriber.status === 'subscribed' ? 'unsubscribed' : 'subscribed',
+                          })
+                        }
+                      >
+                        {subscriber.status === 'subscribed' ? (
+                          <UserMinus className="h-4 w-4" aria-hidden="true" />
+                        ) : (
+                          <UserCheck className="h-4 w-4" aria-hidden="true" />
+                        )}
+                      </IconButton>
+                      <IconButton
+                        label={`Remove ${subscriber.email}`}
+                        variant="danger"
+                        disabled={isMutating}
+                        onClick={() => removeSubscriber.mutate(subscriber.id)}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </IconButton>
+                    </div>
+                  </div>
+
+                  {isExpanded ? (
+                    <dl className="grid grid-cols-2 gap-3 border-t border-neutral-200 bg-neutral-50 px-3 py-4 text-xs">
+                      <div>
+                        <dt className="font-medium text-neutral-500">Status</dt>
+                        <dd className="mt-1 text-neutral-950">{getStatusLabel(subscriber.status)}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-neutral-500">Source</dt>
+                        <dd className="mt-1 text-neutral-950">{sourceLabel}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-neutral-500">Created</dt>
+                        <dd className="mt-1 text-neutral-950">{formatDate(subscriber.createdAt)}</dd>
+                      </div>
+                      <div className="min-w-0">
+                        <dt className="font-medium text-neutral-500">Normalized email</dt>
+                        <dd className="font-mono-ui mt-1 truncate text-neutral-950">{subscriber.emailNormalized}</dd>
+                      </div>
+                    </dl>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      {subscribersQuery.data && subscribersQuery.data.length > 0 ? (
+        <section className="hidden overflow-hidden rounded-lg border border-neutral-200 bg-white md:block">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-neutral-200 text-left text-sm">
               <thead className="bg-neutral-50 text-xs font-semibold tracking-[0.12em] text-neutral-500 uppercase">
@@ -232,6 +337,32 @@ export function DemoSubscribersPage() {
         </section>
       ) : null}
     </div>
+  );
+}
+
+type IconButtonProps = {
+  children: React.ReactNode;
+  disabled?: boolean;
+  label: string;
+  onClick: () => void;
+  variant?: 'secondary' | 'danger';
+};
+
+function IconButton({ children, disabled, label, onClick, variant = 'secondary' }: IconButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={clsx(
+        'inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white focus:ring-2 focus:ring-neutral-950 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        variant === 'secondary' && 'border-neutral-300 text-neutral-800 hover:bg-neutral-100',
+        variant === 'danger' && 'border-red-600 text-red-600 hover:bg-red-50',
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
