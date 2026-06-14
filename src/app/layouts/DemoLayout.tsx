@@ -5,8 +5,6 @@ export function DemoLayout() {
   return (
     <WorkspaceLayout
       basePath="/demo"
-      homePath="/demo"
-      label="Demo workspace"
       footerLabel={`Demo data: ${DEMO_NEWSLETTER_ID}`}
     />
   );

@@ -7,8 +7,6 @@ export function AppLayout() {
   return (
     <WorkspaceLayout
       basePath={`/app/newsletters/${newsletterId}`}
-      homePath="/app"
-      label="Newsletter workspace"
       footerLabel="Phase 1 shell"
     />
   );
