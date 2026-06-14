@@ -181,6 +181,44 @@ class DemoSubscriberRepository implements SubscriberRepository {
     });
   }
 
+  async update(newsletterId: Id, subscriberId: Id, input: UpsertSubscriberInput): Promise<Subscriber> {
+    return mutateDemoState((state) => {
+      requireNewsletter(state, newsletterId);
+      requireSameNewsletterForm(state, newsletterId, input.sourceFormId);
+
+      const subscriber = state.subscribers.find(
+        (candidate) => candidate.newsletterId === newsletterId && candidate.id === subscriberId,
+      );
+
+      if (!subscriber) {
+        throw new Error('Subscriber not found');
+      }
+
+      const emailNormalized = normalizeSubscriberEmail(input.email);
+      const duplicateSubscriber = state.subscribers.find(
+        (candidate) =>
+          candidate.newsletterId === newsletterId &&
+          candidate.emailNormalized === emailNormalized &&
+          candidate.id !== subscriberId,
+      );
+
+      if (duplicateSubscriber) {
+        throw new Error('A subscriber with this email already exists');
+      }
+
+      const timestamp = now();
+      subscriber.email = input.email.trim();
+      subscriber.emailNormalized = emailNormalized;
+      subscriber.name = input.name ?? null;
+      subscriber.status = input.status ?? subscriber.status;
+      subscriber.sourceFormId = input.sourceFormId ?? null;
+      subscriber.updatedAt = timestamp;
+      subscriber.unsubscribedAt = subscriber.status === 'unsubscribed' ? timestamp : null;
+
+      return subscriber;
+    });
+  }
+
   async remove(newsletterId: Id, subscriberId: Id) {
     mutateDemoState((state) => {
       state.subscribers = state.subscribers.filter(

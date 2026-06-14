@@ -65,6 +65,7 @@ export interface SubscriberRepository {
   list(newsletterId: Id): Promise<Subscriber[]>;
   get(newsletterId: Id, subscriberId: Id): Promise<Subscriber | null>;
   upsert(newsletterId: Id, input: UpsertSubscriberInput): Promise<Subscriber>;
+  update(newsletterId: Id, subscriberId: Id, input: UpsertSubscriberInput): Promise<Subscriber>;
   remove(newsletterId: Id, subscriberId: Id): Promise<void>;
   setStatus(newsletterId: Id, subscriberId: Id, status: SubscriberStatus): Promise<Subscriber>;
 }

@@ -46,6 +46,20 @@ export function useUpsertDemoSubscriber() {
   });
 }
 
+export function useUpdateDemoSubscriber() {
+  const { newsletterId, repositories } = useDemoWorkspace();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ subscriberId, input }: { subscriberId: Id; input: UpsertSubscriberInput }) =>
+      repositories.subscribers.update(newsletterId, subscriberId, input),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+    },
+  });
+}
+
 export function useRemoveDemoSubscriber() {
   const { newsletterId, repositories } = useDemoWorkspace();
   const queryClient = useQueryClient();
