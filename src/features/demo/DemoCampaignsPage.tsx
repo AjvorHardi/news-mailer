@@ -11,6 +11,7 @@ import { PageHeader } from '../../shared/ui/PageHeader';
 import { Input } from '../../shared/ui/Input';
 import { campaignInputSchema } from '../../shared/schemas/domainSchemas';
 import type { Campaign, CampaignAudienceType, Id, Segment, Subscriber } from '../../shared/types/domain';
+import { sanitizeCampaignHtml } from '../../shared/utils/sanitizeCampaignHtml';
 import {
   useDemoCampaigns,
   countCampaignRecipients,
@@ -442,7 +443,7 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit,
           onSubmit({
             ...values,
             bodyJson: editor?.getJSON() ?? values.bodyJson,
-            bodyHtml: editor?.getHTML() ?? values.bodyHtml,
+            bodyHtml: sanitizeCampaignHtml(editor?.getHTML() ?? values.bodyHtml),
             audienceType,
             segmentId: audienceType === 'segment' ? segmentId : null,
           }),
