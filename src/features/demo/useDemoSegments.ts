@@ -11,6 +11,10 @@ function demoSegmentsQueryKey(newsletterId: Id) {
   return ['demo', 'segments', newsletterId] as const;
 }
 
+function demoCampaignRecipientCountsQueryKey(newsletterId: Id) {
+  return ['demo', 'campaigns', newsletterId, 'recipient-count'] as const;
+}
+
 function demoSegmentMatchCountQueryKey(newsletterId: Id, rules: SegmentRule[]) {
   return ['demo', 'segments', newsletterId, 'match-count', rules] as const;
 }
@@ -35,6 +39,7 @@ export function useSaveDemoSegment() {
       void queryClient.invalidateQueries({ queryKey: demoSegmentsQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: ['demo', 'segments', newsletterId, 'match-count'] });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignRecipientCountsQueryKey(newsletterId) });
     },
   });
 }
@@ -48,6 +53,7 @@ export function useRemoveDemoSegment() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: demoSegmentsQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignRecipientCountsQueryKey(newsletterId) });
     },
   });
 }

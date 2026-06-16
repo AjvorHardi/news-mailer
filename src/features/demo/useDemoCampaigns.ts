@@ -78,6 +78,10 @@ export function countCampaignRecipients(
 ) {
   const segment = audienceType === 'segment' ? segments.find((candidate) => candidate.id === segmentId) ?? null : null;
 
+  if (audienceType === 'segment' && !segment) {
+    return 0;
+  }
+
   return subscribers.filter((subscriber) => {
     if (subscriber.status !== 'subscribed') {
       return false;
