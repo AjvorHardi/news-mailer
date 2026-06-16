@@ -1,13 +1,18 @@
 import { Pencil, Plus } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import clsx from 'clsx';
 import { Button } from '../../shared/ui/Button';
 import { EmptyState } from '../../shared/ui/EmptyState';
 import { PageHeader } from '../../shared/ui/PageHeader';
+import { Input } from '../../shared/ui/Input';
+import { campaignInputSchema } from '../../shared/schemas/domainSchemas';
 import type { Campaign, Segment, Subscriber } from '../../shared/types/domain';
-import { useDemoCampaigns, countCampaignRecipients } from './useDemoCampaigns';
+import { useDemoCampaigns, countCampaignRecipients, useSaveDemoCampaignDraft } from './useDemoCampaigns';
 import { useDemoSegments } from './useDemoSegments';
 import { useDemoSubscribers } from './useDemoSubscribers';
+import type { z } from 'zod';
 
 const emptySubscribers: Subscriber[] = [];
 const emptySegments: Segment[] = [];
@@ -22,21 +27,36 @@ function formatDate(value: string) {
   return dateFormatter.format(new Date(value));
 }
 
+type CampaignFormInput = z.input<typeof campaignInputSchema>;
+type CampaignFormValues = z.output<typeof campaignInputSchema>;
+
 export function DemoCampaignsPage() {
   const campaignsQuery = useDemoCampaigns();
   const subscribersQuery = useDemoSubscribers();
   const segmentsQuery = useDemoSegments();
+  const saveCampaign = useSaveDemoCampaignDraft();
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const subscribers = subscribersQuery.data ?? emptySubscribers;
   const segments = segmentsQuery.data ?? emptySegments;
   const segmentsById = useMemo(() => new Map(segments.map((segment) => [segment.id, segment.name])), [segments]);
 
   function openCreateEditor() {
+    saveCampaign.reset();
     setEditingCampaign(null);
+    setIsEditorOpen(true);
   }
 
   function openEditEditor(campaign: Campaign) {
+    saveCampaign.reset();
     setEditingCampaign(campaign);
+    setIsEditorOpen(true);
+  }
+
+  function closeEditor() {
+    saveCampaign.reset();
+    setEditingCampaign(null);
+    setIsEditorOpen(false);
   }
 
   return (
@@ -52,7 +72,7 @@ export function DemoCampaignsPage() {
             className="h-10 w-10 px-0 md:w-auto md:px-4"
             aria-label="New campaign"
             onClick={openCreateEditor}
-            disabled
+            disabled={saveCampaign.isPending}
           >
             <Plus className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
             <span className="hidden md:inline">New campaign</span>
@@ -60,7 +80,29 @@ export function DemoCampaignsPage() {
         }
       />
 
-      {editingCampaign ? null : null}
+      {saveCampaign.error ? (
+        <div className="rounded-lg border border-red-200 bg-white p-4 text-sm text-red-600">
+          {saveCampaign.error.message}
+        </div>
+      ) : null}
+
+      {isEditorOpen ? (
+        <DemoCampaignEditor
+          key={editingCampaign?.id ?? 'new-campaign'}
+          campaign={editingCampaign}
+          error={saveCampaign.error}
+          isSubmitting={saveCampaign.isPending}
+          onCancel={closeEditor}
+          onSubmit={async (values) => {
+            await saveCampaign.mutateAsync({
+              campaignId: editingCampaign?.id,
+              input: values,
+            });
+
+            closeEditor();
+          }}
+        />
+      ) : null}
 
       {campaignsQuery.isLoading || subscribersQuery.isLoading || segmentsQuery.isLoading ? (
         <div className="rounded-lg border border-neutral-200 bg-white p-8 text-sm text-neutral-600">Loading campaigns...</div>
@@ -78,7 +120,7 @@ export function DemoCampaignsPage() {
           title="No campaigns yet"
           description="Create a draft campaign to start composing newsletter content."
           action={
-            <Button type="button" onClick={openCreateEditor} disabled>
+            <Button type="button" onClick={openCreateEditor} disabled={saveCampaign.isPending}>
               New campaign
             </Button>
           }
@@ -247,5 +289,64 @@ function IconButton({ children, disabled, label, onClick }: IconButtonProps) {
     >
       {children}
     </button>
+  );
+}
+
+type DemoCampaignEditorProps = {
+  campaign: Campaign | null;
+  error: Error | null;
+  isSubmitting: boolean;
+  onCancel: () => void;
+  onSubmit: (values: CampaignFormValues) => Promise<void>;
+};
+
+function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit }: DemoCampaignEditorProps) {
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+  } = useForm<CampaignFormInput, unknown, CampaignFormValues>({
+    resolver: zodResolver(campaignInputSchema),
+    defaultValues: {
+      subject: campaign?.subject ?? '',
+      bodyJson: campaign?.bodyJson ?? null,
+      bodyHtml: campaign?.bodyHtml ?? null,
+      audienceType: campaign?.audienceType ?? 'all_subscribed',
+      segmentId: campaign?.segmentId ?? null,
+    },
+  });
+
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5">
+      <div className="border-b border-neutral-200 pb-4">
+        <h2 className="font-display text-base font-semibold text-neutral-950">
+          {campaign ? 'Edit draft campaign' : 'Create draft campaign'}
+        </h2>
+        <p className="mt-1 text-sm text-neutral-500">Drafts are saved locally in demo mode. Sending is added in Phase 8.</p>
+      </div>
+
+      <form className="mt-5 space-y-5" onSubmit={handleSubmit(onSubmit)}>
+        <div>
+          <Input label="Subject" type="text" placeholder="June product notes" {...register('subject')} />
+          {errors.subject ? <p className="mt-2 text-sm text-red-600">{errors.subject.message}</p> : null}
+        </div>
+
+        <input type="hidden" {...register('bodyJson')} />
+        <input type="hidden" {...register('bodyHtml')} />
+        <input type="hidden" {...register('audienceType')} />
+        <input type="hidden" {...register('segmentId')} />
+
+        {error ? <p className="text-sm text-red-600">{error.message}</p> : null}
+
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {campaign ? 'Save draft' : 'Create draft'}
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }
