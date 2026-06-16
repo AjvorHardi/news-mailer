@@ -341,7 +341,7 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit,
     editorProps: {
       attributes: {
         class:
-          'prose prose-neutral min-h-56 max-w-none rounded-md border border-neutral-300 bg-white px-4 py-3 text-sm leading-6 text-neutral-950 focus:outline-none',
+          'campaign-editor-content min-h-56 rounded-md border border-neutral-300 bg-white px-4 py-3 text-sm leading-6 text-neutral-950 focus:outline-none',
       },
     },
     immediatelyRender: false,
