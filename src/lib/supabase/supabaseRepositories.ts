@@ -1,11 +1,17 @@
 import type {
   CreateNewsletterInput,
+  CreateSignupFormInput,
   NewsletterRepository,
+  SaveSegmentInput,
+  SegmentRepository,
+  SignupFormRepository,
   SubscriberRepository,
   UpdateNewsletterSettingsInput,
+  UpdateSignupFormInput,
   UpsertSubscriberInput,
 } from '../repositories/contracts';
-import type { Id, Newsletter, Profile, Subscriber, SubscriberStatus } from '../../shared/types/domain';
+import type { Id, Newsletter, Profile, Segment, SignupForm, Subscriber, SubscriberStatus } from '../../shared/types/domain';
+import { subscriberMatchesRules } from '../demo-storage/segmentMatcher';
 import { normalizeSubscriberEmail } from '../../shared/utils/email';
 import { requireSupabaseClient } from './client';
 
@@ -42,6 +48,32 @@ type SubscriberRow = {
   created_at: string;
   updated_at: string;
   unsubscribed_at: string | null;
+};
+
+type SignupFormRow = {
+  id: string;
+  newsletter_id: string;
+  internal_name: string;
+  slug: string;
+  heading: string;
+  button_text: string;
+  success_message: string;
+  background_color: string;
+  text_color: string;
+  button_color: string;
+  button_text_color: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+type SegmentRow = {
+  id: string;
+  newsletter_id: string;
+  name: string;
+  rules: Segment['rules'];
+  created_at: string;
+  updated_at: string;
 };
 
 export type EnsureProfileInput = {
@@ -89,6 +121,36 @@ function mapSubscriber(row: SubscriberRow): Subscriber {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     unsubscribedAt: row.unsubscribed_at,
+  };
+}
+
+function mapSignupForm(row: SignupFormRow): SignupForm {
+  return {
+    id: row.id,
+    newsletterId: row.newsletter_id,
+    internalName: row.internal_name,
+    slug: row.slug,
+    heading: row.heading,
+    buttonText: row.button_text,
+    successMessage: row.success_message,
+    backgroundColor: row.background_color,
+    textColor: row.text_color,
+    buttonColor: row.button_color,
+    buttonTextColor: row.button_text_color,
+    isActive: row.is_active,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapSegment(row: SegmentRow): Segment {
+  return {
+    id: row.id,
+    newsletterId: row.newsletter_id,
+    name: row.name,
+    rules: row.rules,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -351,6 +413,223 @@ export class SupabaseSubscriberRepository implements SubscriberRepository {
 function mapSupabaseSubscriberError(error: Error) {
   if (error.message.includes('subscribers_newsletter_id_email_normalized_key')) {
     return new Error('A subscriber with this email already exists');
+  }
+
+  return error;
+}
+
+export class SupabaseSignupFormRepository implements SignupFormRepository {
+  async list(newsletterId: Id): Promise<SignupForm[]> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('signup_forms')
+      .select(
+        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
+      )
+      .eq('newsletter_id', newsletterId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return ((data ?? []) as SignupFormRow[]).map(mapSignupForm);
+  }
+
+  async get(newsletterId: Id, formId: Id): Promise<SignupForm | null> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('signup_forms')
+      .select(
+        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
+      )
+      .eq('newsletter_id', newsletterId)
+      .eq('id', formId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ? mapSignupForm(data as SignupFormRow) : null;
+  }
+
+  async getPublicBySlug(slug: string): Promise<SignupForm | null> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('signup_forms')
+      .select(
+        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
+      )
+      .eq('slug', slug)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ? mapSignupForm(data as SignupFormRow) : null;
+  }
+
+  async create(newsletterId: Id, input: CreateSignupFormInput): Promise<SignupForm> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('signup_forms')
+      .insert({
+        newsletter_id: newsletterId,
+        internal_name: input.internalName,
+        slug: input.slug,
+        heading: input.heading,
+        button_text: input.buttonText,
+        success_message: input.successMessage,
+        background_color: input.backgroundColor,
+        text_color: input.textColor,
+        button_color: input.buttonColor,
+        button_text_color: input.buttonTextColor,
+        is_active: input.isActive,
+      })
+      .select(
+        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
+      )
+      .single();
+
+    if (error) {
+      throw mapSupabaseSignupFormError(error);
+    }
+
+    return mapSignupForm(data as SignupFormRow);
+  }
+
+  async update(newsletterId: Id, formId: Id, input: UpdateSignupFormInput): Promise<SignupForm> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('signup_forms')
+      .update({
+        internal_name: input.internalName,
+        slug: input.slug,
+        heading: input.heading,
+        button_text: input.buttonText,
+        success_message: input.successMessage,
+        background_color: input.backgroundColor,
+        text_color: input.textColor,
+        button_color: input.buttonColor,
+        button_text_color: input.buttonTextColor,
+        is_active: input.isActive,
+      })
+      .eq('newsletter_id', newsletterId)
+      .eq('id', formId)
+      .select(
+        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
+      )
+      .single();
+
+    if (error) {
+      throw mapSupabaseSignupFormError(error);
+    }
+
+    return mapSignupForm(data as SignupFormRow);
+  }
+
+  async remove(newsletterId: Id, formId: Id): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client.from('signup_forms').delete().eq('newsletter_id', newsletterId).eq('id', formId);
+
+    if (error) {
+      throw error;
+    }
+  }
+}
+
+export class SupabaseSegmentRepository implements SegmentRepository {
+  async list(newsletterId: Id): Promise<Segment[]> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('segments')
+      .select('id, newsletter_id, name, rules, created_at, updated_at')
+      .eq('newsletter_id', newsletterId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return ((data ?? []) as SegmentRow[]).map(mapSegment);
+  }
+
+  async get(newsletterId: Id, segmentId: Id): Promise<Segment | null> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('segments')
+      .select('id, newsletter_id, name, rules, created_at, updated_at')
+      .eq('newsletter_id', newsletterId)
+      .eq('id', segmentId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ? mapSegment(data as SegmentRow) : null;
+  }
+
+  async save(newsletterId: Id, input: SaveSegmentInput, segmentId?: Id): Promise<Segment> {
+    const client = requireSupabaseClient();
+
+    if (segmentId) {
+      const { data, error } = await client
+        .from('segments')
+        .update({
+          name: input.name,
+          rules: input.rules,
+        })
+        .eq('newsletter_id', newsletterId)
+        .eq('id', segmentId)
+        .select('id, newsletter_id, name, rules, created_at, updated_at')
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return mapSegment(data as SegmentRow);
+    }
+
+    const { data, error } = await client
+      .from('segments')
+      .insert({
+        newsletter_id: newsletterId,
+        name: input.name,
+        rules: input.rules,
+      })
+      .select('id, newsletter_id, name, rules, created_at, updated_at')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapSegment(data as SegmentRow);
+  }
+
+  async remove(newsletterId: Id, segmentId: Id): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client.from('segments').delete().eq('newsletter_id', newsletterId).eq('id', segmentId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async countMatches(newsletterId: Id, rules: Segment['rules']): Promise<number> {
+    const subscribers = await new SupabaseSubscriberRepository().list(newsletterId);
+    return subscribers.filter((subscriber) => subscriberMatchesRules(subscriber, rules)).length;
+  }
+}
+
+function mapSupabaseSignupFormError(error: Error) {
+  if (error.message.includes('signup_forms_slug_key')) {
+    return new Error('Signup form slug already exists');
   }
 
   return error;
