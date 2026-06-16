@@ -20,6 +20,10 @@ function demoCampaignRecipientCountQueryKey(newsletterId: Id, audienceType: Camp
   return ['demo', 'campaigns', newsletterId, 'recipient-count', audienceType, segmentId] as const;
 }
 
+function demoActivityQueryKey(newsletterId: Id) {
+  return ['demo', 'activity', newsletterId] as const;
+}
+
 export function useDemoCampaigns() {
   const { newsletterId, repositories } = useDemoWorkspace();
 
@@ -50,6 +54,21 @@ export function useSaveDemoCampaignDraft() {
       void queryClient.invalidateQueries({ queryKey: demoCampaignsQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoCampaignQueryKey(newsletterId, campaign.id) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+    },
+  });
+}
+
+export function useSendDemoCampaign() {
+  const { newsletterId, repositories } = useDemoWorkspace();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (campaignId: Id) => repositories.campaigns.send(newsletterId, campaignId),
+    onSuccess: ({ campaign }) => {
+      void queryClient.invalidateQueries({ queryKey: demoCampaignsQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignQueryKey(newsletterId, campaign.id) });
+      void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoActivityQueryKey(newsletterId) });
     },
   });
 }
