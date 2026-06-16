@@ -490,7 +490,11 @@ class DemoCampaignRepository implements CampaignRepository {
           return false;
         }
 
-        return segment ? subscriberMatchesRules(subscriber, segment.rules) : true;
+        if (campaign.audienceType === 'segment') {
+          return segment ? subscriberMatchesRules(subscriber, segment.rules) : false;
+        }
+
+        return true;
       });
       const timestamp = now();
       const recipients = subscribers.map<CampaignRecipient>((subscriber, index) => ({
