@@ -1,6 +1,6 @@
 import { Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
-import { useForm, type UseFormRegister, type UseFormSetValue, type UseFormWatch } from 'react-hook-form';
+import { useForm, useWatch, type UseFormRegister, type UseFormSetValue, type UseFormWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import clsx from 'clsx';
 import { Button } from '../../shared/ui/Button';
@@ -368,6 +368,7 @@ function DemoSignupFormEditor({
   onSubmit,
 }: DemoSignupFormEditorProps) {
   const {
+    control,
     formState: { errors },
     handleSubmit,
     register,
@@ -390,6 +391,7 @@ function DemoSignupFormEditor({
         }
       : defaultFormValues,
   });
+  const previewValues = useWatch({ control });
 
   return (
     <section className="rounded-lg border border-neutral-200 bg-white p-5">
@@ -476,6 +478,10 @@ function DemoSignupFormEditor({
           </span>
         </label>
 
+        <div className="md:col-span-2">
+          <SignupFormPreview values={{ ...defaultFormValues, ...previewValues }} />
+        </div>
+
         {error ? <p className="text-sm text-red-600 md:col-span-2">{error.message}</p> : null}
 
         <div className="flex flex-wrap justify-end gap-2 md:col-span-2">
@@ -487,6 +493,60 @@ function DemoSignupFormEditor({
           </Button>
         </div>
       </form>
+    </section>
+  );
+}
+
+function SignupFormPreview({ values }: { values: SignupFormInput }) {
+  const slug = values.slug?.trim() || 'form-slug';
+  const heading = values.heading?.trim() || 'Signup form heading';
+  const buttonText = values.buttonText?.trim() || 'Subscribe';
+  const successMessage = values.successMessage?.trim() || 'Success message';
+
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+      <div className="flex flex-col gap-1 border-b border-neutral-200 pb-3 min-[640px]:flex-row min-[640px]:items-end min-[640px]:justify-between">
+        <div>
+          <h3 className="font-display text-sm font-semibold text-neutral-950">Live preview</h3>
+          <p className="mt-1 text-xs text-neutral-500">Public subscribe behavior will be wired in a later phase.</p>
+        </div>
+        <p className="font-mono-ui text-xs text-neutral-500">/subscribe/{slug}</p>
+      </div>
+
+      <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-4">
+        <div
+          className="mx-auto max-w-md rounded-md border border-neutral-200 p-5"
+          style={{
+            backgroundColor: values.backgroundColor,
+            color: values.textColor,
+          }}
+        >
+          <h4 className="font-display text-xl font-semibold">{heading}</h4>
+          <div className="mt-5 grid gap-3 min-[520px]:grid-cols-[1fr_auto]">
+            <label className="block">
+              <span className="sr-only">Email address</span>
+              <input
+                type="email"
+                disabled
+                placeholder="reader@example.com"
+                className="block h-10 w-full rounded-md border border-neutral-300 bg-white px-3 text-sm text-neutral-950 placeholder:text-neutral-400"
+              />
+            </label>
+            <button
+              type="button"
+              disabled
+              className="h-10 rounded-md px-4 text-sm font-medium disabled:opacity-100"
+              style={{
+                backgroundColor: values.buttonColor,
+                color: values.buttonTextColor,
+              }}
+            >
+              {buttonText}
+            </button>
+          </div>
+          <p className="mt-4 text-sm">{successMessage}</p>
+        </div>
+      </div>
     </section>
   );
 }
