@@ -2,7 +2,7 @@ import { Pencil, Plus } from 'lucide-react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useMemo, useState, type ReactNode } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import clsx from 'clsx';
 import { Button } from '../../shared/ui/Button';
@@ -10,8 +10,13 @@ import { EmptyState } from '../../shared/ui/EmptyState';
 import { PageHeader } from '../../shared/ui/PageHeader';
 import { Input } from '../../shared/ui/Input';
 import { campaignInputSchema } from '../../shared/schemas/domainSchemas';
-import type { Campaign, Segment, Subscriber } from '../../shared/types/domain';
-import { useDemoCampaigns, countCampaignRecipients, useSaveDemoCampaignDraft } from './useDemoCampaigns';
+import type { Campaign, CampaignAudienceType, Id, Segment, Subscriber } from '../../shared/types/domain';
+import {
+  useDemoCampaigns,
+  countCampaignRecipients,
+  useDemoCampaignRecipientCount,
+  useSaveDemoCampaignDraft,
+} from './useDemoCampaigns';
 import { useDemoSegments } from './useDemoSegments';
 import { useDemoSubscribers } from './useDemoSubscribers';
 import type { z } from 'zod';
@@ -95,6 +100,7 @@ export function DemoCampaignsPage() {
           error={saveCampaign.error}
           isSubmitting={saveCampaign.isPending}
           onCancel={closeEditor}
+          segments={segments}
           onSubmit={async (values) => {
             await saveCampaign.mutateAsync({
               campaignId: editingCampaign?.id,
@@ -300,10 +306,18 @@ type DemoCampaignEditorProps = {
   isSubmitting: boolean;
   onCancel: () => void;
   onSubmit: (values: CampaignFormValues) => Promise<void>;
+  segments: Segment[];
 };
 
-function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit }: DemoCampaignEditorProps) {
+function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit, segments }: DemoCampaignEditorProps) {
+  const defaultSegmentId =
+    campaign?.segmentId && segments.some((segment) => segment.id === campaign.segmentId)
+      ? campaign.segmentId
+      : segments[0]?.id ?? null;
+  const defaultAudienceType: CampaignAudienceType =
+    campaign?.audienceType === 'segment' && defaultSegmentId ? 'segment' : 'all_subscribed';
   const {
+    control,
     formState: { errors },
     handleSubmit,
     register,
@@ -314,10 +328,13 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit 
       subject: campaign?.subject ?? '',
       bodyJson: campaign?.bodyJson ?? null,
       bodyHtml: campaign?.bodyHtml ?? null,
-      audienceType: campaign?.audienceType ?? 'all_subscribed',
-      segmentId: campaign?.segmentId ?? null,
+      audienceType: defaultAudienceType,
+      segmentId: defaultAudienceType === 'segment' ? defaultSegmentId : null,
     },
   });
+  const audienceType = useWatch({ control, name: 'audienceType' });
+  const segmentId = useWatch({ control, name: 'segmentId' });
+  const recipientCountQuery = useDemoCampaignRecipientCount(audienceType, segmentId);
   const editor = useEditor({
     extensions: [StarterKit],
     content: campaign?.bodyHtml || '<p></p>',
@@ -343,16 +360,40 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit 
         <p className="mt-1 text-sm text-neutral-500">Drafts are saved locally in demo mode. Sending is added in Phase 8.</p>
       </div>
 
-      <form className="mt-5 space-y-5" onSubmit={handleSubmit(onSubmit)}>
+      <form
+        className="mt-5 space-y-5"
+        onSubmit={handleSubmit((values) =>
+          onSubmit({
+            ...values,
+            bodyJson: editor?.getJSON() ?? values.bodyJson,
+            bodyHtml: editor?.getHTML() ?? values.bodyHtml,
+            audienceType,
+            segmentId: audienceType === 'segment' ? segmentId : null,
+          }),
+        )}
+      >
         <div>
           <Input label="Subject" type="text" placeholder="June product notes" {...register('subject')} />
           {errors.subject ? <p className="mt-2 text-sm text-red-600">{errors.subject.message}</p> : null}
         </div>
 
-        <input type="hidden" {...register('bodyJson')} />
-        <input type="hidden" {...register('bodyHtml')} />
-        <input type="hidden" {...register('audienceType')} />
-        <input type="hidden" {...register('segmentId')} />
+        <CampaignAudienceSelector
+          audienceType={audienceType}
+          count={recipientCountQuery.data}
+          isCountLoading={recipientCountQuery.isLoading}
+          segmentId={segmentId}
+          segments={segments}
+          onAudienceTypeChange={(nextAudienceType) => {
+            setValue('audienceType', nextAudienceType, { shouldDirty: true, shouldValidate: true });
+            setValue('segmentId', nextAudienceType === 'segment' ? segments[0]?.id ?? null : null, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }}
+          onSegmentChange={(nextSegmentId) =>
+            setValue('segmentId', nextSegmentId, { shouldDirty: true, shouldValidate: true })
+          }
+        />
 
         <div>
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -399,6 +440,73 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit 
           </Button>
         </div>
       </form>
+    </section>
+  );
+}
+
+type CampaignAudienceSelectorProps = {
+  audienceType: CampaignAudienceType;
+  count?: number;
+  isCountLoading: boolean;
+  onAudienceTypeChange: (audienceType: CampaignAudienceType) => void;
+  onSegmentChange: (segmentId: Id) => void;
+  segmentId: Id | null;
+  segments: Segment[];
+};
+
+function CampaignAudienceSelector({
+  audienceType,
+  count,
+  isCountLoading,
+  onAudienceTypeChange,
+  onSegmentChange,
+  segmentId,
+  segments,
+}: CampaignAudienceSelectorProps) {
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+      <div className="flex flex-col gap-3 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between">
+        <div>
+          <h3 className="font-display text-sm font-semibold text-neutral-950">Audience</h3>
+          <p className="mt-1 text-xs text-neutral-500">Only subscribed demo subscribers are counted.</p>
+        </div>
+        <div className="font-mono-ui text-2xl font-semibold text-neutral-950">
+          {isCountLoading ? '...' : count ?? 0}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <label className="block">
+          <span className="text-sm font-medium text-neutral-800">Audience type</span>
+          <select
+            value={audienceType}
+            onChange={(event) => onAudienceTypeChange(event.target.value === 'segment' ? 'segment' : 'all_subscribed')}
+            className="mt-2 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-950 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950 focus:outline-none"
+          >
+            <option value="all_subscribed">All subscribed</option>
+            <option value="segment" disabled={segments.length === 0}>
+              Saved segment
+            </option>
+          </select>
+        </label>
+
+        {audienceType === 'segment' ? (
+          <label className="block">
+            <span className="text-sm font-medium text-neutral-800">Segment</span>
+            <select
+              value={segmentId ?? ''}
+              onChange={(event) => onSegmentChange(event.target.value)}
+              className="mt-2 block w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-950 focus:border-neutral-950 focus:ring-2 focus:ring-neutral-950 focus:outline-none"
+            >
+              {segments.map((segment) => (
+                <option key={segment.id} value={segment.id}>
+                  {segment.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+      </div>
     </section>
   );
 }
