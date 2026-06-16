@@ -6,6 +6,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 import { LoginPage } from '../../features/auth/LoginPage';
 import { RegisterPage } from '../../features/auth/RegisterPage';
 import { DemoHomePage } from '../../features/demo/DemoHomePage';
+import { DemoActivityPage } from '../../features/demo/DemoActivityPage';
 import { DemoCampaignsPage } from '../../features/demo/DemoCampaignsPage';
 import { DemoOverviewPage } from '../../features/demo/DemoOverviewPage';
 import { DemoSegmentsPage } from '../../features/demo/DemoSegmentsPage';
@@ -39,7 +40,7 @@ export function AppRouter() {
         <Route path="forms" element={<DemoSignupFormsPage />} />
         <Route path="segments" element={<DemoSegmentsPage />} />
         <Route path="campaigns" element={<DemoCampaignsPage />} />
-        <Route path="activity" element={<ActivityPage />} />
+        <Route path="activity" element={<DemoActivityPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 
