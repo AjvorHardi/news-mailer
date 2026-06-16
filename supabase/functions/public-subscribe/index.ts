@@ -20,6 +20,7 @@ type SignupFormRow = {
 
 type SubscriberRow = {
   id: string;
+  status: 'subscribed' | 'unsubscribed';
 };
 
 function jsonResponse(body: unknown, status = 200) {
@@ -103,7 +104,7 @@ Deno.serve(async (request) => {
   const timestamp = new Date().toISOString();
   const { data: existingSubscriber, error: existingSubscriberError } = await supabase
     .from('subscribers')
-    .select('id')
+    .select('id, status')
     .eq('newsletter_id', form.newsletter_id)
     .eq('email_normalized', emailNormalized)
     .maybeSingle();
@@ -115,6 +116,15 @@ Deno.serve(async (request) => {
 
   if (existingSubscriber) {
     const subscriber = existingSubscriber as SubscriberRow;
+
+    if (subscriber.status === 'subscribed') {
+      return jsonResponse({
+        ok: true,
+        status: 'already_subscribed',
+        message: 'This email is already subscribed.',
+      });
+    }
+
     const { error: updateError } = await supabase
       .from('subscribers')
       .update({
@@ -133,7 +143,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Subscription could not be completed' }, 500);
     }
 
-    return jsonResponse({ ok: true, message: form.success_message });
+    return jsonResponse({ ok: true, status: 'resubscribed', message: form.success_message });
   }
 
   const { error: insertError } = await supabase.from('subscribers').insert({
@@ -153,5 +163,5 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: 'Subscription could not be completed' }, 500);
   }
 
-  return jsonResponse({ ok: true, message: form.success_message });
+  return jsonResponse({ ok: true, status: 'subscribed', message: form.success_message });
 });

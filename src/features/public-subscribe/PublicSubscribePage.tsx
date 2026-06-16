@@ -24,6 +24,7 @@ type PublicFormResponse = {
 
 type PublicSubscribeResponse = {
   ok: boolean;
+  status: 'subscribed' | 'resubscribed' | 'already_subscribed';
   message: string;
 };
 
@@ -136,7 +137,10 @@ export function PublicSubscribePage() {
             <h1 className="font-display mt-3 text-2xl font-semibold">{form.heading}</h1>
 
             {subscribe.isSuccess ? (
-              <PublicSubscribeMessage title="Subscription confirmed" description={subscribe.data.message} />
+              <PublicSubscribeMessage
+                title={subscribe.data.status === 'already_subscribed' ? 'Already subscribed' : 'Subscription confirmed'}
+                description={subscribe.data.message}
+              />
             ) : (
               <form className="mt-6 space-y-4" onSubmit={handleSubmit((values) => subscribe.mutate(values))}>
                 <div>
