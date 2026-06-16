@@ -1,16 +1,33 @@
 import type {
+  ActivityRepository,
+  CampaignRepository,
   CreateNewsletterInput,
   CreateSignupFormInput,
+  DataRepositories,
   NewsletterRepository,
+  SaveCampaignInput,
   SaveSegmentInput,
   SegmentRepository,
+  SendCampaignResult,
   SignupFormRepository,
   SubscriberRepository,
   UpdateNewsletterSettingsInput,
   UpdateSignupFormInput,
   UpsertSubscriberInput,
 } from '../repositories/contracts';
-import type { Id, Newsletter, Profile, Segment, SignupForm, Subscriber, SubscriberStatus } from '../../shared/types/domain';
+import type {
+  ActivityStats,
+  Campaign,
+  CampaignRecipient,
+  CampaignStatus,
+  Id,
+  Newsletter,
+  Profile,
+  Segment,
+  SignupForm,
+  Subscriber,
+  SubscriberStatus,
+} from '../../shared/types/domain';
 import { subscriberMatchesRules } from '../demo-storage/segmentMatcher';
 import { normalizeSubscriberEmail } from '../../shared/utils/email';
 import { requireSupabaseClient } from './client';
@@ -76,12 +93,53 @@ type SegmentRow = {
   updated_at: string;
 };
 
+type CampaignRow = {
+  id: string;
+  newsletter_id: string;
+  subject: string;
+  body_json: unknown | null;
+  body_html: string | null;
+  status: CampaignStatus;
+  audience_type: Campaign['audienceType'];
+  segment_id: string | null;
+  sent_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type CampaignRecipientRow = {
+  id: string;
+  campaign_id: string;
+  newsletter_id: string;
+  subscriber_id: string | null;
+  email: string;
+  email_normalized: string;
+  name: string | null;
+  status: CampaignRecipient['status'];
+  provider_message_id: string | null;
+  failure_reason: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  created_at: string;
+};
+
 export type EnsureProfileInput = {
   email: string;
   fullName?: string | null;
   selectedPlan?: string | null;
   subscriberLimit?: number | null;
 };
+
+const newsletterColumns = 'id, user_id, name, description, sender_name, from_email, created_at, updated_at';
+const subscriberColumns =
+  'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at';
+const signupFormColumns =
+  'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at';
+const segmentColumns = 'id, newsletter_id, name, rules, created_at, updated_at';
+const campaignColumns =
+  'id, newsletter_id, subject, body_json, body_html, status, audience_type, segment_id, sent_at, created_at, updated_at';
+const campaignRecipientColumns =
+  'id, campaign_id, newsletter_id, subscriber_id, email, email_normalized, name, status, provider_message_id, failure_reason, sent_at, delivered_at, created_at';
 
 function mapProfile(row: ProfileRow): Profile {
   return {
@@ -154,6 +212,51 @@ function mapSegment(row: SegmentRow): Segment {
   };
 }
 
+function mapCampaign(row: CampaignRow): Campaign {
+  return {
+    id: row.id,
+    newsletterId: row.newsletter_id,
+    subject: row.subject,
+    bodyJson: row.body_json,
+    bodyHtml: row.body_html,
+    status: row.status,
+    audienceType: row.audience_type,
+    segmentId: row.segment_id,
+    sentAt: row.sent_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapCampaignRecipient(row: CampaignRecipientRow): CampaignRecipient {
+  return {
+    id: row.id,
+    campaignId: row.campaign_id,
+    newsletterId: row.newsletter_id,
+    subscriberId: row.subscriber_id,
+    email: row.email,
+    emailNormalized: row.email_normalized,
+    name: row.name,
+    status: row.status,
+    providerMessageId: row.provider_message_id,
+    failureReason: row.failure_reason,
+    sentAt: row.sent_at,
+    deliveredAt: row.delivered_at,
+    createdAt: row.created_at,
+  };
+}
+
+function calculateStats(recipients: CampaignRecipient[]): ActivityStats {
+  return recipients.reduce<ActivityStats>(
+    (stats, recipient) => ({
+      ...stats,
+      total: stats.total + 1,
+      [recipient.status]: stats[recipient.status] + 1,
+    }),
+    { total: 0, pending: 0, sent: 0, delivered: 0, bounced: 0, failed: 0 },
+  );
+}
+
 export async function ensureSupabaseProfile(input: EnsureProfileInput): Promise<Profile> {
   const client = requireSupabaseClient();
   const {
@@ -196,7 +299,7 @@ export class SupabaseNewsletterRepository implements NewsletterRepository {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('newsletters')
-      .select('id, user_id, name, description, sender_name, from_email, created_at, updated_at')
+      .select(newsletterColumns)
       .order('updated_at', { ascending: false });
 
     if (error) {
@@ -210,7 +313,7 @@ export class SupabaseNewsletterRepository implements NewsletterRepository {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('newsletters')
-      .select('id, user_id, name, description, sender_name, from_email, created_at, updated_at')
+      .select(newsletterColumns)
       .eq('id', newsletterId)
       .maybeSingle();
 
@@ -245,7 +348,7 @@ export class SupabaseNewsletterRepository implements NewsletterRepository {
         sender_name: input.senderName,
         from_email: user.email ?? 'newsletter@example.com',
       })
-      .select('id, user_id, name, description, sender_name, from_email, created_at, updated_at')
+      .select(newsletterColumns)
       .single();
 
     if (error) {
@@ -266,7 +369,7 @@ export class SupabaseNewsletterRepository implements NewsletterRepository {
         from_email: input.fromEmail,
       })
       .eq('id', newsletterId)
-      .select('id, user_id, name, description, sender_name, from_email, created_at, updated_at')
+      .select(newsletterColumns)
       .single();
 
     if (error) {
@@ -282,9 +385,7 @@ export class SupabaseSubscriberRepository implements SubscriberRepository {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('subscribers')
-      .select(
-        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
-      )
+      .select(subscriberColumns)
       .eq('newsletter_id', newsletterId)
       .order('created_at', { ascending: false });
 
@@ -299,9 +400,7 @@ export class SupabaseSubscriberRepository implements SubscriberRepository {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('subscribers')
-      .select(
-        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
-      )
+      .select(subscriberColumns)
       .eq('newsletter_id', newsletterId)
       .eq('id', subscriberId)
       .maybeSingle();
@@ -327,9 +426,7 @@ export class SupabaseSubscriberRepository implements SubscriberRepository {
         source_form_id: input.sourceFormId ?? null,
         unsubscribed_at: status === 'unsubscribed' ? new Date().toISOString() : null,
       })
-      .select(
-        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
-      )
+      .select(subscriberColumns)
       .single();
 
     if (error) {
@@ -366,9 +463,7 @@ export class SupabaseSubscriberRepository implements SubscriberRepository {
       })
       .eq('newsletter_id', newsletterId)
       .eq('id', subscriberId)
-      .select(
-        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
-      )
+      .select(subscriberColumns)
       .single();
 
     if (error) {
@@ -397,9 +492,7 @@ export class SupabaseSubscriberRepository implements SubscriberRepository {
       })
       .eq('newsletter_id', newsletterId)
       .eq('id', subscriberId)
-      .select(
-        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
-      )
+      .select(subscriberColumns)
       .single();
 
     if (error) {
@@ -423,9 +516,7 @@ export class SupabaseSignupFormRepository implements SignupFormRepository {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('signup_forms')
-      .select(
-        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
-      )
+      .select(signupFormColumns)
       .eq('newsletter_id', newsletterId)
       .order('updated_at', { ascending: false });
 
@@ -440,9 +531,7 @@ export class SupabaseSignupFormRepository implements SignupFormRepository {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('signup_forms')
-      .select(
-        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
-      )
+      .select(signupFormColumns)
       .eq('newsletter_id', newsletterId)
       .eq('id', formId)
       .maybeSingle();
@@ -458,9 +547,7 @@ export class SupabaseSignupFormRepository implements SignupFormRepository {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('signup_forms')
-      .select(
-        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
-      )
+      .select(signupFormColumns)
       .eq('slug', slug)
       .eq('is_active', true)
       .maybeSingle();
@@ -489,9 +576,7 @@ export class SupabaseSignupFormRepository implements SignupFormRepository {
         button_text_color: input.buttonTextColor,
         is_active: input.isActive,
       })
-      .select(
-        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
-      )
+      .select(signupFormColumns)
       .single();
 
     if (error) {
@@ -519,9 +604,7 @@ export class SupabaseSignupFormRepository implements SignupFormRepository {
       })
       .eq('newsletter_id', newsletterId)
       .eq('id', formId)
-      .select(
-        'id, newsletter_id, internal_name, slug, heading, button_text, success_message, background_color, text_color, button_color, button_text_color, is_active, created_at, updated_at',
-      )
+      .select(signupFormColumns)
       .single();
 
     if (error) {
@@ -546,7 +629,7 @@ export class SupabaseSegmentRepository implements SegmentRepository {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('segments')
-      .select('id, newsletter_id, name, rules, created_at, updated_at')
+      .select(segmentColumns)
       .eq('newsletter_id', newsletterId)
       .order('updated_at', { ascending: false });
 
@@ -561,7 +644,7 @@ export class SupabaseSegmentRepository implements SegmentRepository {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('segments')
-      .select('id, newsletter_id, name, rules, created_at, updated_at')
+      .select(segmentColumns)
       .eq('newsletter_id', newsletterId)
       .eq('id', segmentId)
       .maybeSingle();
@@ -585,7 +668,7 @@ export class SupabaseSegmentRepository implements SegmentRepository {
         })
         .eq('newsletter_id', newsletterId)
         .eq('id', segmentId)
-        .select('id, newsletter_id, name, rules, created_at, updated_at')
+        .select(segmentColumns)
         .single();
 
       if (error) {
@@ -602,7 +685,7 @@ export class SupabaseSegmentRepository implements SegmentRepository {
         name: input.name,
         rules: input.rules,
       })
-      .select('id, newsletter_id, name, rules, created_at, updated_at')
+      .select(segmentColumns)
       .single();
 
     if (error) {
@@ -633,4 +716,217 @@ function mapSupabaseSignupFormError(error: Error) {
   }
 
   return error;
+}
+
+export class SupabaseCampaignRepository implements CampaignRepository {
+  async list(newsletterId: Id): Promise<Campaign[]> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('campaigns')
+      .select(campaignColumns)
+      .eq('newsletter_id', newsletterId)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return ((data ?? []) as CampaignRow[]).map(mapCampaign);
+  }
+
+  async get(newsletterId: Id, campaignId: Id): Promise<Campaign | null> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('campaigns')
+      .select(campaignColumns)
+      .eq('newsletter_id', newsletterId)
+      .eq('id', campaignId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ? mapCampaign(data as CampaignRow) : null;
+  }
+
+  async saveDraft(newsletterId: Id, input: SaveCampaignInput, campaignId?: Id): Promise<Campaign> {
+    const client = requireSupabaseClient();
+
+    if (campaignId) {
+      const existingCampaign = await this.get(newsletterId, campaignId);
+
+      if (!existingCampaign) {
+        throw new Error('Campaign not found');
+      }
+
+      if (existingCampaign.status !== 'draft') {
+        throw new Error('Only draft campaigns can be edited');
+      }
+
+      const { data, error } = await client
+        .from('campaigns')
+        .update({
+          subject: input.subject,
+          body_json: input.bodyJson,
+          body_html: input.bodyHtml,
+          audience_type: input.audienceType,
+          segment_id: input.segmentId,
+        })
+        .eq('newsletter_id', newsletterId)
+        .eq('id', campaignId)
+        .select(campaignColumns)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return mapCampaign(data as CampaignRow);
+    }
+
+    const { data, error } = await client
+      .from('campaigns')
+      .insert({
+        newsletter_id: newsletterId,
+        subject: input.subject,
+        body_json: input.bodyJson,
+        body_html: input.bodyHtml,
+        audience_type: input.audienceType,
+        segment_id: input.segmentId,
+      })
+      .select(campaignColumns)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapCampaign(data as CampaignRow);
+  }
+
+  async setStatus(newsletterId: Id, campaignId: Id, status: CampaignStatus): Promise<Campaign> {
+    const client = requireSupabaseClient();
+    const timestamp = new Date().toISOString();
+    const { data, error } = await client
+      .from('campaigns')
+      .update({
+        status,
+        sent_at: status === 'sent' ? timestamp : undefined,
+      })
+      .eq('newsletter_id', newsletterId)
+      .eq('id', campaignId)
+      .select(campaignColumns)
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapCampaign(data as CampaignRow);
+  }
+
+  async send(newsletterId: Id, campaignId: Id): Promise<SendCampaignResult> {
+    const client = requireSupabaseClient();
+    const campaign = await this.get(newsletterId, campaignId);
+
+    if (!campaign) {
+      throw new Error('Campaign not found');
+    }
+
+    if (campaign.status === 'sent') {
+      return {
+        campaign,
+        recipients: await new SupabaseActivityRepository().listRecipients(newsletterId, campaignId),
+      };
+    }
+
+    if (campaign.status !== 'draft') {
+      throw new Error('Campaign cannot be sent from its current status');
+    }
+
+    const segment = campaign.segmentId ? await new SupabaseSegmentRepository().get(newsletterId, campaign.segmentId) : null;
+    const subscribers = (await new SupabaseSubscriberRepository().list(newsletterId)).filter((subscriber) => {
+      if (subscriber.status !== 'subscribed') {
+        return false;
+      }
+
+      if (campaign.audienceType === 'segment') {
+        return segment ? subscriberMatchesRules(subscriber, segment.rules) : false;
+      }
+
+      return true;
+    });
+
+    await client.from('campaign_recipients').delete().eq('newsletter_id', newsletterId).eq('campaign_id', campaignId);
+
+    if (subscribers.length > 0) {
+      const { error: recipientsError } = await client.from('campaign_recipients').insert(
+        subscribers.map((subscriber) => ({
+          campaign_id: campaign.id,
+          newsletter_id: newsletterId,
+          subscriber_id: subscriber.id,
+          email: subscriber.email,
+          email_normalized: subscriber.emailNormalized,
+          name: subscriber.name,
+          status: 'pending',
+          provider_message_id: null,
+          failure_reason: null,
+          sent_at: null,
+          delivered_at: null,
+        })),
+      );
+
+      if (recipientsError) {
+        throw recipientsError;
+      }
+    }
+
+    const updatedCampaign = await this.setStatus(newsletterId, campaignId, subscribers.length > 0 ? 'sending' : 'failed');
+    const recipients = await new SupabaseActivityRepository().listRecipients(newsletterId, campaignId);
+
+    return {
+      campaign: updatedCampaign,
+      recipients,
+    };
+  }
+}
+
+export class SupabaseActivityRepository implements ActivityRepository {
+  async getStats(newsletterId: Id, campaignId?: Id): Promise<ActivityStats> {
+    const recipients = await this.listRecipients(newsletterId, campaignId);
+    return calculateStats(recipients);
+  }
+
+  async listRecipients(newsletterId: Id, campaignId?: Id): Promise<CampaignRecipient[]> {
+    const client = requireSupabaseClient();
+    let query = client
+      .from('campaign_recipients')
+      .select(campaignRecipientColumns)
+      .eq('newsletter_id', newsletterId)
+      .order('created_at', { ascending: false });
+
+    if (campaignId) {
+      query = query.eq('campaign_id', campaignId);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      throw error;
+    }
+
+    return ((data ?? []) as CampaignRecipientRow[]).map(mapCampaignRecipient);
+  }
+}
+
+export function createSupabaseRepositories(): DataRepositories {
+  return {
+    newsletters: new SupabaseNewsletterRepository(),
+    subscribers: new SupabaseSubscriberRepository(),
+    signupForms: new SupabaseSignupFormRepository(),
+    segments: new SupabaseSegmentRepository(),
+    campaigns: new SupabaseCampaignRepository(),
+    activity: new SupabaseActivityRepository(),
+  };
 }
