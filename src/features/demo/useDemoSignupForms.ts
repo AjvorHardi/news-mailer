@@ -11,6 +11,10 @@ function demoSignupFormsQueryKey(newsletterId: Id) {
   return ['demo', 'signup-forms', newsletterId] as const;
 }
 
+function demoSegmentMatchCountsQueryKey(newsletterId: Id) {
+  return ['demo', 'segments', newsletterId, 'match-count'] as const;
+}
+
 export function useDemoSignupForms() {
   const { newsletterId, repositories } = useDemoWorkspace();
 
@@ -71,6 +75,7 @@ export function useRemoveDemoSignupForm() {
       void queryClient.invalidateQueries({ queryKey: demoSignupFormsQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: ['demo', 'subscribers', newsletterId] });
+      void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
     },
   });
 }
