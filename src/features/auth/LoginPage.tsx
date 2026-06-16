@@ -1,4 +1,4 @@
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +18,7 @@ type LoginFormValues = z.output<typeof loginSchema>;
 export function LoginPage() {
   const { isConfigured, isLoading, signIn, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [authError, setAuthError] = useState<string | null>(null);
   const {
     formState: { errors },
@@ -31,8 +32,10 @@ export function LoginPage() {
     },
   });
 
+  const redirectTo = getRedirectPath(location.state);
+
   if (!isLoading && user) {
-    return <Navigate to="/app" replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
   return (
@@ -53,7 +56,7 @@ export function LoginPage() {
 
           try {
             await signIn(values.email, values.password);
-            navigate('/app', { replace: true });
+            navigate(redirectTo, { replace: true });
           } catch (error) {
             setAuthError(error instanceof Error ? error.message : 'Login failed');
           }
@@ -80,4 +83,20 @@ export function LoginPage() {
       </p>
     </section>
   );
+}
+
+function getRedirectPath(state: unknown) {
+  if (
+    state &&
+    typeof state === 'object' &&
+    'from' in state &&
+    state.from &&
+    typeof state.from === 'object' &&
+    'pathname' in state.from &&
+    typeof state.from.pathname === 'string'
+  ) {
+    return state.from.pathname;
+  }
+
+  return '/app';
 }
