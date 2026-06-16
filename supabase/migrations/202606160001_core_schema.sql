@@ -1,4 +1,4 @@
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 create or replace function public.set_updated_at()
 returns trigger
@@ -21,7 +21,7 @@ create table public.profiles (
 );
 
 create table public.newsletters (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   name text not null,
   description text,
@@ -32,7 +32,7 @@ create table public.newsletters (
 );
 
 create table public.signup_forms (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   newsletter_id uuid not null references public.newsletters(id) on delete cascade,
   internal_name text not null,
   slug text not null,
@@ -52,14 +52,14 @@ create table public.signup_forms (
 );
 
 create table public.subscribers (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   newsletter_id uuid not null references public.newsletters(id) on delete cascade,
   email text not null,
   email_normalized text not null,
   name text,
   status text not null default 'subscribed' check (status in ('subscribed', 'unsubscribed')),
   source_form_id uuid,
-  unsubscribe_token text not null default encode(gen_random_bytes(32), 'hex'),
+  unsubscribe_token text not null default encode(extensions.gen_random_bytes(32), 'hex'),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unsubscribed_at timestamptz,
@@ -70,7 +70,7 @@ create table public.subscribers (
 );
 
 create table public.segments (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   newsletter_id uuid not null references public.newsletters(id) on delete cascade,
   name text not null,
   rules jsonb not null default '[]'::jsonb,
@@ -81,7 +81,7 @@ create table public.segments (
 );
 
 create table public.campaigns (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   newsletter_id uuid not null references public.newsletters(id) on delete cascade,
   subject text not null,
   body_json jsonb,
@@ -97,7 +97,7 @@ create table public.campaigns (
 );
 
 create table public.campaign_recipients (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   campaign_id uuid not null,
   newsletter_id uuid not null references public.newsletters(id) on delete cascade,
   subscriber_id uuid,
@@ -115,7 +115,7 @@ create table public.campaign_recipients (
 );
 
 create table public.allowed_test_recipients (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   email text not null,
   email_normalized text not null,
@@ -124,7 +124,7 @@ create table public.allowed_test_recipients (
 );
 
 create table public.webhook_events (
-  id uuid primary key default gen_random_uuid(),
+  id uuid primary key default extensions.gen_random_uuid(),
   provider text not null,
   provider_event_id text,
   event_type text not null,
