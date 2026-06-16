@@ -22,6 +22,11 @@ export const subscriberInputSchema = z.object({
   sourceFormId: z.string().nullable().optional(),
 });
 
+const hexColorSchema = z
+  .string()
+  .trim()
+  .regex(/^#[0-9a-fA-F]{6}$/, 'Use a 6-digit hex color, like #171717');
+
 export const signupFormInputSchema = z.object({
   internalName: z.string().trim().min(1, 'Internal name is required'),
   slug: z
@@ -32,10 +37,10 @@ export const signupFormInputSchema = z.object({
   heading: z.string().trim().min(1, 'Heading is required'),
   buttonText: z.string().trim().min(1, 'Button text is required'),
   successMessage: z.string().trim().min(1, 'Success message is required'),
-  backgroundColor: z.string().trim().min(1),
-  textColor: z.string().trim().min(1),
-  buttonColor: z.string().trim().min(1),
-  buttonTextColor: z.string().trim().min(1),
+  backgroundColor: hexColorSchema,
+  textColor: hexColorSchema,
+  buttonColor: hexColorSchema,
+  buttonTextColor: hexColorSchema,
   isActive: z.boolean().default(true),
 });
 

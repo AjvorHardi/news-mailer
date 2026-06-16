@@ -7,6 +7,7 @@ import { LoginPage } from '../../features/auth/LoginPage';
 import { RegisterPage } from '../../features/auth/RegisterPage';
 import { DemoHomePage } from '../../features/demo/DemoHomePage';
 import { DemoOverviewPage } from '../../features/demo/DemoOverviewPage';
+import { DemoSignupFormsPage } from '../../features/demo/DemoSignupFormsPage';
 import { DemoSubscribersPage } from '../../features/demo/DemoSubscribersPage';
 import { DemoWorkspaceRoute } from '../../features/demo/DemoWorkspaceRoute';
 import { MarketingHomePage } from '../../features/marketing/MarketingHomePage';
@@ -33,7 +34,7 @@ export function AppRouter() {
       <Route path="demo" element={<DemoWorkspaceRoute />}>
         <Route index element={<DemoOverviewPage />} />
         <Route path="subscribers" element={<DemoSubscribersPage />} />
-        <Route path="forms" element={<FormsPage />} />
+        <Route path="forms" element={<DemoSignupFormsPage />} />
         <Route path="segments" element={<SegmentsPage />} />
         <Route path="campaigns" element={<CampaignsPage />} />
         <Route path="activity" element={<ActivityPage />} />
