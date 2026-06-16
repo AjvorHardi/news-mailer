@@ -1,4 +1,6 @@
 import { Pencil, Plus } from 'lucide-react';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -305,6 +307,7 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit 
     formState: { errors },
     handleSubmit,
     register,
+    setValue,
   } = useForm<CampaignFormInput, unknown, CampaignFormValues>({
     resolver: zodResolver(campaignInputSchema),
     defaultValues: {
@@ -313,6 +316,21 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit 
       bodyHtml: campaign?.bodyHtml ?? null,
       audienceType: campaign?.audienceType ?? 'all_subscribed',
       segmentId: campaign?.segmentId ?? null,
+    },
+  });
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: campaign?.bodyHtml || '<p></p>',
+    editorProps: {
+      attributes: {
+        class:
+          'prose prose-neutral min-h-56 max-w-none rounded-md border border-neutral-300 bg-white px-4 py-3 text-sm leading-6 text-neutral-950 focus:outline-none',
+      },
+    },
+    immediatelyRender: false,
+    onUpdate: ({ editor: currentEditor }) => {
+      setValue('bodyJson', currentEditor.getJSON(), { shouldDirty: true });
+      setValue('bodyHtml', currentEditor.getHTML(), { shouldDirty: true });
     },
   });
 
@@ -336,6 +354,40 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit 
         <input type="hidden" {...register('audienceType')} />
         <input type="hidden" {...register('segmentId')} />
 
+        <div>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <EditorButton
+              label="Bold"
+              isActive={editor?.isActive('bold') ?? false}
+              onClick={() => editor?.chain().focus().toggleBold().run()}
+            >
+              B
+            </EditorButton>
+            <EditorButton
+              label="Italic"
+              isActive={editor?.isActive('italic') ?? false}
+              onClick={() => editor?.chain().focus().toggleItalic().run()}
+            >
+              I
+            </EditorButton>
+            <EditorButton
+              label="Heading"
+              isActive={editor?.isActive('heading', { level: 2 }) ?? false}
+              onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
+            >
+              H2
+            </EditorButton>
+            <EditorButton
+              label="Bullet list"
+              isActive={editor?.isActive('bulletList') ?? false}
+              onClick={() => editor?.chain().focus().toggleBulletList().run()}
+            >
+              List
+            </EditorButton>
+          </div>
+          <EditorContent editor={editor} />
+        </div>
+
         {error ? <p className="text-sm text-red-600">{error.message}</p> : null}
 
         <div className="flex flex-wrap justify-end gap-2">
@@ -348,5 +400,30 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit 
         </div>
       </form>
     </section>
+  );
+}
+
+type EditorButtonProps = {
+  children: ReactNode;
+  isActive: boolean;
+  label: string;
+  onClick: () => void;
+};
+
+function EditorButton({ children, isActive, label, onClick }: EditorButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className={clsx(
+        'inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-2 text-xs font-medium focus:ring-2 focus:ring-neutral-950 focus:ring-offset-2 focus:outline-none',
+        isActive
+          ? 'border-neutral-950 bg-neutral-950 text-white'
+          : 'border-neutral-300 bg-white text-neutral-800 hover:bg-neutral-100',
+      )}
+    >
+      {children}
+    </button>
   );
 }
