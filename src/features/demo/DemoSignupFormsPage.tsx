@@ -1,16 +1,23 @@
 import { Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { useForm, type UseFormRegister, type UseFormSetValue, type UseFormWatch } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import clsx from 'clsx';
 import { Button } from '../../shared/ui/Button';
 import { EmptyState } from '../../shared/ui/EmptyState';
 import { PageHeader } from '../../shared/ui/PageHeader';
+import { Input } from '../../shared/ui/Input';
+import { signupFormInputSchema } from '../../shared/schemas/domainSchemas';
 import type { SignupForm } from '../../shared/types/domain';
 import { useResetDemoData } from './useDemoOverview';
 import {
+  useCreateDemoSignupForm,
   useDemoSignupForms,
   useRemoveDemoSignupForm,
   useSetDemoSignupFormActive,
+  useUpdateDemoSignupForm,
 } from './useDemoSignupForms';
+import type { z } from 'zod';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -26,12 +33,58 @@ function getPublicPath(form: SignupForm) {
   return `/subscribe/${form.slug}`;
 }
 
+type SignupFormInput = z.input<typeof signupFormInputSchema>;
+type SignupFormValues = z.output<typeof signupFormInputSchema>;
+
+const defaultFormValues: SignupFormInput = {
+  internalName: '',
+  slug: '',
+  heading: '',
+  buttonText: 'Subscribe',
+  successMessage: 'Thanks for subscribing.',
+  backgroundColor: '#ffffff',
+  textColor: '#171717',
+  buttonColor: '#171717',
+  buttonTextColor: '#ffffff',
+  isActive: true,
+};
+
 export function DemoSignupFormsPage() {
   const formsQuery = useDemoSignupForms();
+  const createForm = useCreateDemoSignupForm();
+  const updateForm = useUpdateDemoSignupForm();
   const setFormActive = useSetDemoSignupFormActive();
   const removeForm = useRemoveDemoSignupForm();
   const resetDemoData = useResetDemoData();
-  const isMutating = setFormActive.isPending || removeForm.isPending || resetDemoData.isPending;
+  const [editingForm, setEditingForm] = useState<SignupForm | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const isMutating =
+    createForm.isPending ||
+    updateForm.isPending ||
+    setFormActive.isPending ||
+    removeForm.isPending ||
+    resetDemoData.isPending;
+
+  function openCreateForm() {
+    createForm.reset();
+    updateForm.reset();
+    setEditingForm(null);
+    setIsEditorOpen(true);
+  }
+
+  function openEditForm(form: SignupForm) {
+    createForm.reset();
+    updateForm.reset();
+    setEditingForm(form);
+    setIsEditorOpen(true);
+  }
+
+  function closeEditor() {
+    createForm.reset();
+    updateForm.reset();
+    setEditingForm(null);
+    setIsEditorOpen(false);
+  }
 
   function toggleFormActive(form: SignupForm) {
     setFormActive.mutate({ formId: form.id, isActive: !form.isActive });
@@ -65,7 +118,8 @@ export function DemoSignupFormsPage() {
               type="button"
               className="h-10 w-10 px-0 md:w-auto md:px-4"
               aria-label="Create form"
-              disabled
+              onClick={openCreateForm}
+              disabled={isMutating}
             >
               <Plus className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
               <span className="hidden md:inline">Create form</span>
@@ -78,6 +132,25 @@ export function DemoSignupFormsPage() {
         <div className="rounded-lg border border-red-200 bg-white p-4 text-sm text-red-600">
           {setFormActive.error?.message ?? removeForm.error?.message ?? resetDemoData.error?.message}
         </div>
+      ) : null}
+
+      {isEditorOpen ? (
+        <DemoSignupFormEditor
+          key={editingForm?.id ?? 'new-form'}
+          form={editingForm}
+          error={createForm.error ?? updateForm.error}
+          isSubmitting={createForm.isPending || updateForm.isPending}
+          onCancel={closeEditor}
+          onSubmit={async (values) => {
+            if (editingForm) {
+              await updateForm.mutateAsync({ formId: editingForm.id, input: values });
+            } else {
+              await createForm.mutateAsync(values);
+            }
+
+            closeEditor();
+          }}
+        />
       ) : null}
 
       {formsQuery.isLoading ? (
@@ -100,6 +173,11 @@ export function DemoSignupFormsPage() {
         <EmptyState
           title="No signup forms yet"
           description="Create a form to define the copy and public slug visitors will use to subscribe."
+          action={
+            <Button type="button" onClick={openCreateForm} disabled={isMutating}>
+              Create form
+            </Button>
+          }
         />
       ) : null}
 
@@ -107,6 +185,7 @@ export function DemoSignupFormsPage() {
         <FormsList
           forms={formsQuery.data}
           isMutating={isMutating}
+          onEdit={openEditForm}
           onRemove={removeFormById}
           onToggleActive={toggleFormActive}
         />
@@ -118,11 +197,12 @@ export function DemoSignupFormsPage() {
 type FormsListProps = {
   forms: SignupForm[];
   isMutating: boolean;
+  onEdit: (form: SignupForm) => void;
   onRemove: (form: SignupForm) => void;
   onToggleActive: (form: SignupForm) => void;
 };
 
-function FormsList({ forms, isMutating, onRemove, onToggleActive }: FormsListProps) {
+function FormsList({ forms, isMutating, onEdit, onRemove, onToggleActive }: FormsListProps) {
   return (
     <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
       <div className="hidden overflow-x-auto min-[960px]:block">
@@ -162,6 +242,7 @@ function FormsList({ forms, isMutating, onRemove, onToggleActive }: FormsListPro
                   <FormActions
                     form={form}
                     isMutating={isMutating}
+                    onEdit={onEdit}
                     onRemove={onRemove}
                     onToggleActive={onToggleActive}
                   />
@@ -196,6 +277,7 @@ function FormsList({ forms, isMutating, onRemove, onToggleActive }: FormsListPro
               <FormActions
                 form={form}
                 isMutating={isMutating}
+                onEdit={onEdit}
                 onRemove={onRemove}
                 onToggleActive={onToggleActive}
               />
@@ -218,14 +300,15 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
 type FormActionsProps = {
   form: SignupForm;
   isMutating: boolean;
+  onEdit: (form: SignupForm) => void;
   onRemove: (form: SignupForm) => void;
   onToggleActive: (form: SignupForm) => void;
 };
 
-function FormActions({ form, isMutating, onRemove, onToggleActive }: FormActionsProps) {
+function FormActions({ form, isMutating, onEdit, onRemove, onToggleActive }: FormActionsProps) {
   return (
     <div className="flex items-center justify-center gap-1">
-      <IconButton label={`Edit ${form.internalName}`} disabled>
+      <IconButton label={`Edit ${form.internalName}`} disabled={isMutating} onClick={() => onEdit(form)}>
         <Pencil className="h-4 w-4" aria-hidden="true" />
       </IconButton>
       <Button type="button" size="sm" variant="secondary" disabled={isMutating} onClick={() => onToggleActive(form)}>
@@ -266,5 +349,177 @@ function IconButton({ children, disabled, label, onClick, variant = 'secondary' 
     >
       {children}
     </button>
+  );
+}
+
+type DemoSignupFormEditorProps = {
+  error: Error | null;
+  form: SignupForm | null;
+  isSubmitting: boolean;
+  onCancel: () => void;
+  onSubmit: (values: SignupFormValues) => Promise<void>;
+};
+
+function DemoSignupFormEditor({
+  error,
+  form,
+  isSubmitting,
+  onCancel,
+  onSubmit,
+}: DemoSignupFormEditorProps) {
+  const {
+    formState: { errors },
+    handleSubmit,
+    register,
+    setValue,
+    watch,
+  } = useForm<SignupFormInput, unknown, SignupFormValues>({
+    resolver: zodResolver(signupFormInputSchema),
+    defaultValues: form
+      ? {
+          internalName: form.internalName,
+          slug: form.slug,
+          heading: form.heading,
+          buttonText: form.buttonText,
+          successMessage: form.successMessage,
+          backgroundColor: form.backgroundColor,
+          textColor: form.textColor,
+          buttonColor: form.buttonColor,
+          buttonTextColor: form.buttonTextColor,
+          isActive: form.isActive,
+        }
+      : defaultFormValues,
+  });
+
+  return (
+    <section className="rounded-lg border border-neutral-200 bg-white p-5">
+      <div className="border-b border-neutral-200 pb-4">
+        <h2 className="font-display text-base font-semibold text-neutral-950">
+          {form ? 'Edit signup form' : 'Create signup form'}
+        </h2>
+        <p className="mt-1 text-sm text-neutral-500">Form changes are stored in localStorage for demo mode.</p>
+      </div>
+
+      <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>
+        <div>
+          <Input label="Internal name" type="text" placeholder="Homepage footer" {...register('internalName')} />
+          {errors.internalName ? <p className="mt-2 text-sm text-red-600">{errors.internalName.message}</p> : null}
+        </div>
+
+        <div>
+          <Input label="Public slug" type="text" placeholder="product-notes" {...register('slug')} />
+          {errors.slug ? <p className="mt-2 text-sm text-red-600">{errors.slug.message}</p> : null}
+        </div>
+
+        <div>
+          <Input label="Heading" type="text" placeholder="Get weekly product notes" {...register('heading')} />
+          {errors.heading ? <p className="mt-2 text-sm text-red-600">{errors.heading.message}</p> : null}
+        </div>
+
+        <div>
+          <Input label="Button text" type="text" placeholder="Subscribe" {...register('buttonText')} />
+          {errors.buttonText ? <p className="mt-2 text-sm text-red-600">{errors.buttonText.message}</p> : null}
+        </div>
+
+        <div className="md:col-span-2">
+          <Input
+            label="Success message"
+            type="text"
+            placeholder="Thanks for subscribing."
+            {...register('successMessage')}
+          />
+          {errors.successMessage ? <p className="mt-2 text-sm text-red-600">{errors.successMessage.message}</p> : null}
+        </div>
+
+        <ColorField
+          label="Background color"
+          name="backgroundColor"
+          register={register}
+          setValue={setValue}
+          watch={watch}
+          error={errors.backgroundColor?.message}
+        />
+        <ColorField
+          label="Text color"
+          name="textColor"
+          register={register}
+          setValue={setValue}
+          watch={watch}
+          error={errors.textColor?.message}
+        />
+        <ColorField
+          label="Button color"
+          name="buttonColor"
+          register={register}
+          setValue={setValue}
+          watch={watch}
+          error={errors.buttonColor?.message}
+        />
+        <ColorField
+          label="Button text color"
+          name="buttonTextColor"
+          register={register}
+          setValue={setValue}
+          watch={watch}
+          error={errors.buttonTextColor?.message}
+        />
+
+        <label className="flex items-center gap-3 rounded-md border border-neutral-200 px-3 py-3 md:col-span-2">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950"
+            {...register('isActive')}
+          />
+          <span>
+            <span className="block text-sm font-medium text-neutral-800">Active public form</span>
+            <span className="block text-xs text-neutral-500">Inactive forms stay saved but cannot be found publicly.</span>
+          </span>
+        </label>
+
+        {error ? <p className="text-sm text-red-600 md:col-span-2">{error.message}</p> : null}
+
+        <div className="flex flex-wrap justify-end gap-2 md:col-span-2">
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {form ? 'Save form' : 'Create form'}
+          </Button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+type ColorFieldName = 'backgroundColor' | 'textColor' | 'buttonColor' | 'buttonTextColor';
+
+type ColorFieldProps = {
+  error?: string;
+  label: string;
+  name: ColorFieldName;
+  register: UseFormRegister<SignupFormInput>;
+  setValue: UseFormSetValue<SignupFormInput>;
+  watch: UseFormWatch<SignupFormInput>;
+};
+
+function ColorField({ error, label, name, register, setValue, watch }: ColorFieldProps) {
+  const value = watch(name);
+
+  return (
+    <div>
+      <div className="grid grid-cols-[1fr_auto] items-end gap-3">
+        <Input label={label} type="text" placeholder="#171717" {...register(name)} />
+        <label className="block">
+          <span className="sr-only">{label} picker</span>
+          <input
+            type="color"
+            value={value}
+            onChange={(event) => setValue(name, event.target.value, { shouldDirty: true, shouldValidate: true })}
+            className="h-10 w-12 cursor-pointer rounded-md border border-neutral-300 bg-white p-1"
+          />
+        </label>
+      </div>
+      {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
+    </div>
   );
 }
