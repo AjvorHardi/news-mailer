@@ -19,6 +19,10 @@ function demoSegmentMatchCountsQueryKey(newsletterId: Id) {
   return ['demo', 'segments', newsletterId, 'match-count'] as const;
 }
 
+function demoCampaignRecipientCountsQueryKey(newsletterId: Id) {
+  return ['demo', 'campaigns', newsletterId, 'recipient-count'] as const;
+}
+
 export function useDemoSubscribers() {
   const { newsletterId, repositories } = useDemoWorkspace();
 
@@ -47,6 +51,7 @@ export function useUpsertDemoSubscriber() {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignRecipientCountsQueryKey(newsletterId) });
     },
   });
 }
@@ -61,6 +66,7 @@ export function useCreateDemoSubscriber() {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignRecipientCountsQueryKey(newsletterId) });
     },
   });
 }
@@ -76,6 +82,7 @@ export function useUpdateDemoSubscriber() {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignRecipientCountsQueryKey(newsletterId) });
     },
   });
 }
@@ -90,6 +97,7 @@ export function useRemoveDemoSubscriber() {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignRecipientCountsQueryKey(newsletterId) });
     },
   });
 }
@@ -105,6 +113,7 @@ export function useSetDemoSubscriberStatus() {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignRecipientCountsQueryKey(newsletterId) });
     },
   });
 }

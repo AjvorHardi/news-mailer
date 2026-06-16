@@ -15,11 +15,12 @@ const navItems = [
 ];
 
 type WorkspaceLayoutProps = {
+  footerAction?: ReactNode;
   basePath: string;
   footerLabel: string;
 };
 
-export function WorkspaceLayout({ basePath, footerLabel }: WorkspaceLayoutProps) {
+export function WorkspaceLayout({ basePath, footerAction, footerLabel }: WorkspaceLayoutProps) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
 
@@ -50,6 +51,7 @@ export function WorkspaceLayout({ basePath, footerLabel }: WorkspaceLayoutProps)
           <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-neutral-200 bg-white min-[1120px]:block">
             <SidebarContent
               basePath={basePath}
+              footerAction={footerAction}
               footerLabel={footerLabel}
               onClose={() => setIsDesktopSidebarOpen(false)}
             />
@@ -72,6 +74,7 @@ export function WorkspaceLayout({ basePath, footerLabel }: WorkspaceLayoutProps)
         >
           <SidebarContent
             basePath={basePath}
+            footerAction={footerAction}
             footerLabel={footerLabel}
             onClose={() => setIsMobileSidebarOpen(false)}
             onNavigate={() => setIsMobileSidebarOpen(false)}
@@ -90,12 +93,13 @@ export function WorkspaceLayout({ basePath, footerLabel }: WorkspaceLayoutProps)
 
 type SidebarContentProps = {
   basePath: string;
+  footerAction?: ReactNode;
   footerLabel: string;
   onClose: () => void;
   onNavigate?: () => void;
 };
 
-function SidebarContent({ basePath, footerLabel, onClose, onNavigate }: SidebarContentProps) {
+function SidebarContent({ basePath, footerAction, footerLabel, onClose, onNavigate }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center border-b border-neutral-200 px-4">
@@ -127,7 +131,10 @@ function SidebarContent({ basePath, footerLabel, onClose, onNavigate }: SidebarC
           );
         })}
       </nav>
-      <div className="border-t border-neutral-200 px-6 py-4 text-sm text-neutral-500">{footerLabel}</div>
+      <div className="space-y-3 border-t border-neutral-200 px-6 py-4">
+        <div className="text-sm break-words text-neutral-500">{footerLabel}</div>
+        {footerAction ? <div>{footerAction}</div> : null}
+      </div>
     </div>
   );
 }
