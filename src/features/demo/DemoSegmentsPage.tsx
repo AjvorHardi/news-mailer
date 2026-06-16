@@ -377,6 +377,7 @@ function DemoSegmentEditor({ error, forms, isSubmitting, onCancel, onSubmit, seg
     name: 'rules',
   });
   const watchedRules = useWatch({ control, name: 'rules' });
+  const matchCountQuery = useDemoSegmentMatchCount(watchedRules, watchedRules.length > 0);
 
   return (
     <section className="rounded-lg border border-neutral-200 bg-white p-5">
@@ -421,6 +422,18 @@ function DemoSegmentEditor({ error, forms, isSubmitting, onCancel, onSubmit, seg
             })}
           </div>
           {typeof errors.rules?.message === 'string' ? <p className="text-sm text-red-600">{errors.rules.message}</p> : null}
+        </div>
+
+        <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+          <div className="flex flex-col gap-3 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between">
+            <div>
+              <h3 className="font-display text-sm font-semibold text-neutral-950">Estimated audience</h3>
+              <p className="mt-1 text-xs text-neutral-500">Matched against current demo subscribers.</p>
+            </div>
+            <div className="font-mono-ui text-2xl font-semibold text-neutral-950">
+              {matchCountQuery.isLoading ? '...' : matchCountQuery.data ?? 0}
+            </div>
+          </div>
         </div>
 
         {error ? <p className="text-sm text-red-600">{error.message}</p> : null}
