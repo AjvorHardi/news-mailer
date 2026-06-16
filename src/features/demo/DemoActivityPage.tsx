@@ -9,12 +9,24 @@ const dateFormatter = new Intl.DateTimeFormat('en', {
   year: 'numeric',
 });
 
+const dateTimeFormatter = new Intl.DateTimeFormat('en', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
 function formatDate(value: string) {
   return dateFormatter.format(new Date(value));
 }
 
-function formatOptionalDate(value: string | null) {
-  return value ? formatDate(value) : '-';
+function formatDateTime(value: string) {
+  return dateTimeFormatter.format(new Date(value));
+}
+
+function formatOptionalDateTime(value: string | null) {
+  return value ? formatDateTime(value) : '-';
 }
 
 export function DemoActivityPage() {
@@ -144,10 +156,10 @@ function RecipientDeliveryTable({
                 Status
               </th>
               <th scope="col" className="px-4 py-3 text-center">
-                Sent
+                Sent at
               </th>
               <th scope="col" className="px-4 py-3 text-center">
-                Delivered
+                Delivered at
               </th>
               <th scope="col" className="px-4 py-3">
                 Failure
@@ -168,10 +180,10 @@ function RecipientDeliveryTable({
                   <DeliveryStatusBadge status={recipient.status} />
                 </td>
                 <td className="px-4 py-4 text-center align-middle text-neutral-700">
-                  {formatOptionalDate(recipient.sentAt)}
+                  {formatOptionalDateTime(recipient.sentAt)}
                 </td>
                 <td className="px-4 py-4 text-center align-middle text-neutral-700">
-                  {formatOptionalDate(recipient.deliveredAt)}
+                  {formatOptionalDateTime(recipient.deliveredAt)}
                 </td>
                 <td className="px-4 py-4 align-middle text-neutral-700">{recipient.failureReason ?? '-'}</td>
               </tr>
@@ -198,12 +210,12 @@ function RecipientDeliveryTable({
                 <dd className="mt-1 text-neutral-950">{recipient.name ?? '-'}</dd>
               </div>
               <div>
-                <dt className="font-medium text-neutral-500">Sent</dt>
-                <dd className="mt-1 text-neutral-950">{formatOptionalDate(recipient.sentAt)}</dd>
+                <dt className="font-medium text-neutral-500">Sent at</dt>
+                <dd className="mt-1 text-neutral-950">{formatOptionalDateTime(recipient.sentAt)}</dd>
               </div>
               <div>
-                <dt className="font-medium text-neutral-500">Delivered</dt>
-                <dd className="mt-1 text-neutral-950">{formatOptionalDate(recipient.deliveredAt)}</dd>
+                <dt className="font-medium text-neutral-500">Delivered at</dt>
+                <dd className="mt-1 text-neutral-950">{formatOptionalDateTime(recipient.deliveredAt)}</dd>
               </div>
               <div>
                 <dt className="font-medium text-neutral-500">Failure</dt>
