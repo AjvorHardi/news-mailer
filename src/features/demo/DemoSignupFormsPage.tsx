@@ -573,7 +573,7 @@ function ColorField({ error, label, name, register, setValue, watch }: ColorFiel
           <span className="sr-only">{label} picker</span>
           <input
             type="color"
-            value={value}
+            value={getColorPickerValue(value)}
             onChange={(event) => setValue(name, event.target.value, { shouldDirty: true, shouldValidate: true })}
             className="h-10 w-12 cursor-pointer rounded-md border border-neutral-300 bg-white p-1"
           />
@@ -582,4 +582,8 @@ function ColorField({ error, label, name, register, setValue, watch }: ColorFiel
       {error ? <p className="mt-2 text-sm text-red-600">{error}</p> : null}
     </div>
   );
+}
+
+function getColorPickerValue(value: string) {
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value : '#000000';
 }
