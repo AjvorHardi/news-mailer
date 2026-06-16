@@ -41,9 +41,9 @@ export function DemoActivityPage() {
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Demo activity"
+        eyebrow="Activity"
         title="Delivery activity"
-        description="Review simulated recipient snapshots and delivery status totals from demo campaign sends."
+        description="Review recipient snapshots and delivery status totals from campaign sends."
       />
 
       {statsQuery.isLoading || recipientsQuery.isLoading || campaignsQuery.isLoading ? (
@@ -53,7 +53,7 @@ export function DemoActivityPage() {
       {statsQuery.isError || recipientsQuery.isError || campaignsQuery.isError ? (
         <EmptyState
           title="Activity could not be loaded"
-          description="Return to the demo overview if you need to restore all seeded demo data."
+          description="Refresh the workspace and try again."
         />
       ) : null}
 
@@ -62,7 +62,7 @@ export function DemoActivityPage() {
       {statsQuery.data && statsQuery.data.total === 0 ? (
         <EmptyState
           title="No delivery activity yet"
-          description="Send a draft campaign from the campaigns page to create simulated recipient snapshots."
+          description="Send a draft campaign from the campaigns page to create recipient snapshots."
         />
       ) : null}
 
@@ -139,7 +139,7 @@ function RecipientDeliveryTable({
     <section className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
       <div className="border-b border-neutral-200 px-5 py-4">
         <h2 className="font-display text-base font-semibold text-neutral-950">Recipient deliveries</h2>
-        <p className="mt-1 text-sm text-neutral-500">Snapshot rows captured when a campaign is simulated.</p>
+        <p className="mt-1 text-sm text-neutral-500">Snapshot rows captured when a campaign is sent.</p>
       </div>
 
       <div className="hidden overflow-x-auto min-[1040px]:block">

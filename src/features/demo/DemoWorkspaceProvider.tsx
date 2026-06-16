@@ -10,7 +10,7 @@ export function DemoWorkspaceProvider({ children }: DemoWorkspaceProviderProps) 
   const repositories = useMemo(() => createDemoRepositories(), []);
 
   return (
-    <DemoWorkspaceContext.Provider value={{ newsletterId: DEMO_NEWSLETTER_ID, repositories }}>
+    <DemoWorkspaceContext.Provider value={{ newsletterId: DEMO_NEWSLETTER_ID, mode: 'demo', repositories }}>
       {children}
     </DemoWorkspaceContext.Provider>
   );
