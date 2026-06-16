@@ -1,9 +1,12 @@
 import type {
   CreateNewsletterInput,
   NewsletterRepository,
+  SubscriberRepository,
   UpdateNewsletterSettingsInput,
+  UpsertSubscriberInput,
 } from '../repositories/contracts';
-import type { Id, Newsletter, Profile } from '../../shared/types/domain';
+import type { Id, Newsletter, Profile, Subscriber, SubscriberStatus } from '../../shared/types/domain';
+import { normalizeSubscriberEmail } from '../../shared/utils/email';
 import { requireSupabaseClient } from './client';
 
 type ProfileRow = {
@@ -25,6 +28,20 @@ type NewsletterRow = {
   from_email: string;
   created_at: string;
   updated_at: string;
+};
+
+type SubscriberRow = {
+  id: string;
+  newsletter_id: string;
+  email: string;
+  email_normalized: string;
+  name: string | null;
+  status: SubscriberStatus;
+  source_form_id: string | null;
+  unsubscribe_token: string;
+  created_at: string;
+  updated_at: string;
+  unsubscribed_at: string | null;
 };
 
 export type EnsureProfileInput = {
@@ -56,6 +73,22 @@ function mapNewsletter(row: NewsletterRow): Newsletter {
     fromEmail: row.from_email,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapSubscriber(row: SubscriberRow): Subscriber {
+  return {
+    id: row.id,
+    newsletterId: row.newsletter_id,
+    email: row.email,
+    emailNormalized: row.email_normalized,
+    name: row.name,
+    status: row.status,
+    sourceFormId: row.source_form_id,
+    unsubscribeToken: row.unsubscribe_token,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    unsubscribedAt: row.unsubscribed_at,
   };
 }
 
@@ -180,4 +213,145 @@ export class SupabaseNewsletterRepository implements NewsletterRepository {
 
     return mapNewsletter(data as NewsletterRow);
   }
+}
+
+export class SupabaseSubscriberRepository implements SubscriberRepository {
+  async list(newsletterId: Id): Promise<Subscriber[]> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('subscribers')
+      .select(
+        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
+      )
+      .eq('newsletter_id', newsletterId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return ((data ?? []) as SubscriberRow[]).map(mapSubscriber);
+  }
+
+  async get(newsletterId: Id, subscriberId: Id): Promise<Subscriber | null> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('subscribers')
+      .select(
+        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
+      )
+      .eq('newsletter_id', newsletterId)
+      .eq('id', subscriberId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return data ? mapSubscriber(data as SubscriberRow) : null;
+  }
+
+  async create(newsletterId: Id, input: UpsertSubscriberInput): Promise<Subscriber> {
+    const client = requireSupabaseClient();
+    const status = input.status ?? 'subscribed';
+    const { data, error } = await client
+      .from('subscribers')
+      .insert({
+        newsletter_id: newsletterId,
+        email: input.email.trim(),
+        email_normalized: normalizeSubscriberEmail(input.email),
+        name: input.name?.trim() || null,
+        status,
+        source_form_id: input.sourceFormId ?? null,
+        unsubscribed_at: status === 'unsubscribed' ? new Date().toISOString() : null,
+      })
+      .select(
+        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
+      )
+      .single();
+
+    if (error) {
+      throw mapSupabaseSubscriberError(error);
+    }
+
+    return mapSubscriber(data as SubscriberRow);
+  }
+
+  async upsert(newsletterId: Id, input: UpsertSubscriberInput): Promise<Subscriber> {
+    const existingSubscriber = (await this.list(newsletterId)).find(
+      (subscriber) => subscriber.emailNormalized === normalizeSubscriberEmail(input.email),
+    );
+
+    if (existingSubscriber) {
+      return this.update(newsletterId, existingSubscriber.id, input);
+    }
+
+    return this.create(newsletterId, input);
+  }
+
+  async update(newsletterId: Id, subscriberId: Id, input: UpsertSubscriberInput): Promise<Subscriber> {
+    const client = requireSupabaseClient();
+    const status = input.status ?? 'subscribed';
+    const { data, error } = await client
+      .from('subscribers')
+      .update({
+        email: input.email.trim(),
+        email_normalized: normalizeSubscriberEmail(input.email),
+        name: input.name?.trim() || null,
+        status,
+        source_form_id: input.sourceFormId ?? null,
+        unsubscribed_at: status === 'unsubscribed' ? new Date().toISOString() : null,
+      })
+      .eq('newsletter_id', newsletterId)
+      .eq('id', subscriberId)
+      .select(
+        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
+      )
+      .single();
+
+    if (error) {
+      throw mapSupabaseSubscriberError(error);
+    }
+
+    return mapSubscriber(data as SubscriberRow);
+  }
+
+  async remove(newsletterId: Id, subscriberId: Id): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client.from('subscribers').delete().eq('newsletter_id', newsletterId).eq('id', subscriberId);
+
+    if (error) {
+      throw error;
+    }
+  }
+
+  async setStatus(newsletterId: Id, subscriberId: Id, status: SubscriberStatus): Promise<Subscriber> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('subscribers')
+      .update({
+        status,
+        unsubscribed_at: status === 'unsubscribed' ? new Date().toISOString() : null,
+      })
+      .eq('newsletter_id', newsletterId)
+      .eq('id', subscriberId)
+      .select(
+        'id, newsletter_id, email, email_normalized, name, status, source_form_id, unsubscribe_token, created_at, updated_at, unsubscribed_at',
+      )
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return mapSubscriber(data as SubscriberRow);
+  }
+}
+
+function mapSupabaseSubscriberError(error: Error) {
+  if (error.message.includes('subscribers_newsletter_id_email_normalized_key')) {
+    return new Error('A subscriber with this email already exists');
+  }
+
+  return error;
 }
