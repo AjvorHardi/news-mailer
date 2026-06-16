@@ -69,7 +69,7 @@ export function DemoOverviewPage() {
             disabled={resetDemoData.isPending}
           >
             <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
-            Reset demo
+            Reset all demo data
           </Button>
         }
       />

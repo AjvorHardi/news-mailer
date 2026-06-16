@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Pencil, Plus, RotateCcw, Trash2, UserCheck, UserMinus } from 'lucide-react';
+import { ChevronDown, ChevronUp, Pencil, Plus, Trash2, UserCheck, UserMinus } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,7 +17,6 @@ import {
   useSetDemoSubscriberStatus,
   useUpdateDemoSubscriber,
 } from './useDemoSubscribers';
-import { useResetDemoData } from './useDemoOverview';
 import type { z } from 'zod';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
@@ -44,7 +43,6 @@ export function DemoSubscribersPage() {
   const updateSubscriber = useUpdateDemoSubscriber();
   const setSubscriberStatus = useSetDemoSubscriberStatus();
   const removeSubscriber = useRemoveDemoSubscriber();
-  const resetDemoData = useResetDemoData();
   const [editingSubscriber, setEditingSubscriber] = useState<Subscriber | null>(null);
   const [expandedSubscriberIds, setExpandedSubscriberIds] = useState<string[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -55,8 +53,7 @@ export function DemoSubscribersPage() {
     createSubscriber.isPending ||
     updateSubscriber.isPending ||
     setSubscriberStatus.isPending ||
-    removeSubscriber.isPending ||
-    resetDemoData.isPending;
+    removeSubscriber.isPending;
 
   function openCreateForm() {
     createSubscriber.reset();
@@ -105,35 +102,22 @@ export function DemoSubscribersPage() {
         eyebrow="Demo subscribers"
         title="Subscriber list"
         actions={
-          <>
-            <Button
-              type="button"
-              variant="secondary"
-              className="h-10 w-10 px-0 md:w-auto md:px-4"
-              aria-label="Reset demo"
-              onClick={() => resetDemoData.mutate()}
-              disabled={isMutating}
-            >
-              <RotateCcw className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
-              <span className="hidden md:inline">Reset demo</span>
-            </Button>
-            <Button
-              type="button"
-              className="h-10 w-10 px-0 md:w-auto md:px-4"
-              aria-label="Add subscriber"
-              onClick={openCreateForm}
-              disabled={isMutating}
-            >
-              <Plus className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
-              <span className="hidden md:inline">Add subscriber</span>
-            </Button>
-          </>
+          <Button
+            type="button"
+            className="h-10 w-10 px-0 md:w-auto md:px-4"
+            aria-label="Add subscriber"
+            onClick={openCreateForm}
+            disabled={isMutating}
+          >
+            <Plus className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
+            <span className="hidden md:inline">Add subscriber</span>
+          </Button>
         }
       />
 
-      {setSubscriberStatus.error || removeSubscriber.error || resetDemoData.error ? (
+      {setSubscriberStatus.error || removeSubscriber.error ? (
         <div className="rounded-lg border border-red-200 bg-white p-4 text-sm text-red-600">
-          {setSubscriberStatus.error?.message ?? removeSubscriber.error?.message ?? resetDemoData.error?.message}
+          {setSubscriberStatus.error?.message ?? removeSubscriber.error?.message}
         </div>
       ) : null}
 
@@ -169,12 +153,7 @@ export function DemoSubscribersPage() {
       {subscribersQuery.isError || sourceFormsQuery.isError ? (
         <EmptyState
           title="Subscribers could not be loaded"
-          description="Reset the demo data and try again."
-          action={
-            <Button type="button" variant="secondary" onClick={() => resetDemoData.mutate()} disabled={isMutating}>
-              Reset demo
-            </Button>
-          }
+          description="Return to the demo overview if you need to restore all seeded demo data."
         />
       ) : null}
 

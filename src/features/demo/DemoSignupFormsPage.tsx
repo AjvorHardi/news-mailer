@@ -1,4 +1,4 @@
-import { Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useForm, useWatch, type UseFormRegister, type UseFormSetValue, type UseFormWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +9,6 @@ import { PageHeader } from '../../shared/ui/PageHeader';
 import { Input } from '../../shared/ui/Input';
 import { signupFormInputSchema } from '../../shared/schemas/domainSchemas';
 import type { SignupForm } from '../../shared/types/domain';
-import { useResetDemoData } from './useDemoOverview';
 import {
   useCreateDemoSignupForm,
   useDemoSignupForms,
@@ -55,15 +54,13 @@ export function DemoSignupFormsPage() {
   const updateForm = useUpdateDemoSignupForm();
   const setFormActive = useSetDemoSignupFormActive();
   const removeForm = useRemoveDemoSignupForm();
-  const resetDemoData = useResetDemoData();
   const [editingForm, setEditingForm] = useState<SignupForm | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const isMutating =
     createForm.isPending ||
     updateForm.isPending ||
     setFormActive.isPending ||
-    removeForm.isPending ||
-    resetDemoData.isPending;
+    removeForm.isPending;
 
   function openCreateForm() {
     createForm.reset();
@@ -102,35 +99,22 @@ export function DemoSignupFormsPage() {
         title="Signup forms"
         description="Manage local demo signup forms and preview the public subscription copy before real subscribe behavior is added."
         actions={
-          <>
-            <Button
-              type="button"
-              variant="secondary"
-              className="h-10 w-10 px-0 md:w-auto md:px-4"
-              aria-label="Reset demo"
-              onClick={() => resetDemoData.mutate()}
-              disabled={isMutating}
-            >
-              <RotateCcw className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
-              <span className="hidden md:inline">Reset demo</span>
-            </Button>
-            <Button
-              type="button"
-              className="h-10 w-10 px-0 md:w-auto md:px-4"
-              aria-label="Create form"
-              onClick={openCreateForm}
-              disabled={isMutating}
-            >
-              <Plus className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
-              <span className="hidden md:inline">Create form</span>
-            </Button>
-          </>
+          <Button
+            type="button"
+            className="h-10 w-10 px-0 md:w-auto md:px-4"
+            aria-label="Create form"
+            onClick={openCreateForm}
+            disabled={isMutating}
+          >
+            <Plus className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
+            <span className="hidden md:inline">Create form</span>
+          </Button>
         }
       />
 
-      {setFormActive.error || removeForm.error || resetDemoData.error ? (
+      {setFormActive.error || removeForm.error ? (
         <div className="rounded-lg border border-red-200 bg-white p-4 text-sm text-red-600">
-          {setFormActive.error?.message ?? removeForm.error?.message ?? resetDemoData.error?.message}
+          {setFormActive.error?.message ?? removeForm.error?.message}
         </div>
       ) : null}
 
@@ -160,12 +144,7 @@ export function DemoSignupFormsPage() {
       {formsQuery.isError ? (
         <EmptyState
           title="Signup forms could not be loaded"
-          description="Reset the demo data and try again."
-          action={
-            <Button type="button" variant="secondary" onClick={() => resetDemoData.mutate()} disabled={isMutating}>
-              Reset demo
-            </Button>
-          }
+          description="Return to the demo overview if you need to restore all seeded demo data."
         />
       ) : null}
 
