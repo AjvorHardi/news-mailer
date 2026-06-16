@@ -15,6 +15,10 @@ function demoSignupFormsQueryKey(newsletterId: Id) {
   return ['demo', 'signup-forms', newsletterId] as const;
 }
 
+function demoSegmentMatchCountsQueryKey(newsletterId: Id) {
+  return ['demo', 'segments', newsletterId, 'match-count'] as const;
+}
+
 export function useDemoSubscribers() {
   const { newsletterId, repositories } = useDemoWorkspace();
 
@@ -42,6 +46,7 @@ export function useUpsertDemoSubscriber() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
     },
   });
 }
@@ -55,6 +60,7 @@ export function useCreateDemoSubscriber() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
     },
   });
 }
@@ -69,6 +75,7 @@ export function useUpdateDemoSubscriber() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
     },
   });
 }
@@ -82,6 +89,7 @@ export function useRemoveDemoSubscriber() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
     },
   });
 }
@@ -96,6 +104,7 @@ export function useSetDemoSubscriberStatus() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: demoSubscribersQueryKey(newsletterId) });
       void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoSegmentMatchCountsQueryKey(newsletterId) });
     },
   });
 }
