@@ -1,4 +1,4 @@
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, Plus, Send } from 'lucide-react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { useMemo, useState, type ReactNode } from 'react';
@@ -16,6 +16,7 @@ import {
   countCampaignRecipients,
   useDemoCampaignRecipientCount,
   useSaveDemoCampaignDraft,
+  useSendDemoCampaign,
 } from './useDemoCampaigns';
 import { useDemoSegments } from './useDemoSegments';
 import { useDemoSubscribers } from './useDemoSubscribers';
@@ -42,20 +43,27 @@ export function DemoCampaignsPage() {
   const subscribersQuery = useDemoSubscribers();
   const segmentsQuery = useDemoSegments();
   const saveCampaign = useSaveDemoCampaignDraft();
+  const sendCampaign = useSendDemoCampaign();
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [sendingCampaignId, setSendingCampaignId] = useState<string | null>(null);
+  const [sendResultMessage, setSendResultMessage] = useState<string | null>(null);
   const subscribers = subscribersQuery.data ?? emptySubscribers;
   const segments = segmentsQuery.data ?? emptySegments;
   const segmentsById = useMemo(() => new Map(segments.map((segment) => [segment.id, segment.name])), [segments]);
 
   function openCreateEditor() {
     saveCampaign.reset();
+    sendCampaign.reset();
+    setSendResultMessage(null);
     setEditingCampaign(null);
     setIsEditorOpen(true);
   }
 
   function openEditEditor(campaign: Campaign) {
     saveCampaign.reset();
+    sendCampaign.reset();
+    setSendResultMessage(null);
     setEditingCampaign(campaign);
     setIsEditorOpen(true);
   }
@@ -64,6 +72,23 @@ export function DemoCampaignsPage() {
     saveCampaign.reset();
     setEditingCampaign(null);
     setIsEditorOpen(false);
+  }
+
+  async function sendCampaignById(campaign: Campaign) {
+    sendCampaign.reset();
+    setSendResultMessage(null);
+    setSendingCampaignId(campaign.id);
+
+    try {
+      const result = await sendCampaign.mutateAsync(campaign.id);
+      setSendResultMessage(
+        result.recipients.length > 0
+          ? `Simulated send created ${result.recipients.length} recipient snapshots for "${result.campaign.subject}".`
+          : `No subscribed recipients matched "${result.campaign.subject}", so the simulated send was marked failed.`,
+      );
+    } finally {
+      setSendingCampaignId(null);
+    }
   }
 
   return (
@@ -79,7 +104,7 @@ export function DemoCampaignsPage() {
             className="h-10 w-10 px-0 md:w-auto md:px-4"
             aria-label="New campaign"
             onClick={openCreateEditor}
-            disabled={saveCampaign.isPending}
+            disabled={saveCampaign.isPending || sendCampaign.isPending}
           >
             <Plus className="h-4 w-4 shrink-0 md:mr-2" aria-hidden="true" />
             <span className="hidden md:inline">New campaign</span>
@@ -87,9 +112,15 @@ export function DemoCampaignsPage() {
         }
       />
 
-      {saveCampaign.error ? (
+      {saveCampaign.error || sendCampaign.error ? (
         <div className="rounded-lg border border-red-200 bg-white p-4 text-sm text-red-600">
-          {saveCampaign.error.message}
+          {saveCampaign.error?.message ?? sendCampaign.error?.message}
+        </div>
+      ) : null}
+
+      {sendResultMessage ? (
+        <div className="rounded-lg border border-neutral-200 bg-white p-4 text-sm text-neutral-700">
+          {sendResultMessage}
         </div>
       ) : null}
 
@@ -138,9 +169,12 @@ export function DemoCampaignsPage() {
       {campaignsQuery.data && campaignsQuery.data.length > 0 ? (
         <CampaignsList
           campaigns={campaignsQuery.data}
+          isMutating={saveCampaign.isPending || sendCampaign.isPending}
           onEdit={openEditEditor}
+          onSend={sendCampaignById}
           segments={segments}
           segmentsById={segmentsById}
+          sendingCampaignId={sendingCampaignId}
           subscribers={subscribers}
         />
       ) : null}
@@ -150,13 +184,25 @@ export function DemoCampaignsPage() {
 
 type CampaignsListProps = {
   campaigns: Campaign[];
+  isMutating: boolean;
   onEdit: (campaign: Campaign) => void;
+  onSend: (campaign: Campaign) => void;
   segments: Segment[];
   segmentsById: Map<string, string>;
+  sendingCampaignId: string | null;
   subscribers: Subscriber[];
 };
 
-function CampaignsList({ campaigns, onEdit, segments, segmentsById, subscribers }: CampaignsListProps) {
+function CampaignsList({
+  campaigns,
+  isMutating,
+  onEdit,
+  onSend,
+  segments,
+  segmentsById,
+  sendingCampaignId,
+  subscribers,
+}: CampaignsListProps) {
   const sortedCampaigns = [...campaigns].sort((firstCampaign, secondCampaign) =>
     secondCampaign.updatedAt.localeCompare(firstCampaign.updatedAt),
   );
@@ -205,7 +251,13 @@ function CampaignsList({ campaigns, onEdit, segments, segmentsById, subscribers 
                 </td>
                 <td className="px-4 py-4 text-center align-middle text-neutral-700">{formatDate(campaign.updatedAt)}</td>
                 <td className="px-4 py-4 text-center align-middle">
-                  <CampaignActions campaign={campaign} onEdit={onEdit} />
+                  <CampaignActions
+                    campaign={campaign}
+                    isMutating={isMutating}
+                    isSending={sendingCampaignId === campaign.id}
+                    onEdit={onEdit}
+                    onSend={onSend}
+                  />
                 </td>
               </tr>
             ))}
@@ -236,7 +288,13 @@ function CampaignsList({ campaigns, onEdit, segments, segmentsById, subscribers 
               </div>
             </dl>
             <div className="mt-4 flex justify-end">
-              <CampaignActions campaign={campaign} onEdit={onEdit} />
+              <CampaignActions
+                campaign={campaign}
+                isMutating={isMutating}
+                isSending={sendingCampaignId === campaign.id}
+                onEdit={onEdit}
+                onSend={onSend}
+              />
             </div>
           </article>
         ))}
@@ -261,7 +319,19 @@ function StatusBadge({ status }: { status: Campaign['status'] }) {
   );
 }
 
-function CampaignActions({ campaign, onEdit }: { campaign: Campaign; onEdit: (campaign: Campaign) => void }) {
+function CampaignActions({
+  campaign,
+  isMutating,
+  isSending,
+  onEdit,
+  onSend,
+}: {
+  campaign: Campaign;
+  isMutating: boolean;
+  isSending: boolean;
+  onEdit: (campaign: Campaign) => void;
+  onSend: (campaign: Campaign) => void;
+}) {
   if (campaign.status !== 'draft') {
     return (
       <span className="inline-flex h-9 items-center rounded-md border border-neutral-200 px-3 text-xs text-neutral-500">
@@ -271,9 +341,15 @@ function CampaignActions({ campaign, onEdit }: { campaign: Campaign; onEdit: (ca
   }
 
   return (
-    <IconButton label={`Edit ${campaign.subject}`} onClick={() => onEdit(campaign)}>
-      <Pencil className="h-4 w-4" aria-hidden="true" />
-    </IconButton>
+    <div className="flex items-center justify-center gap-1">
+      <IconButton label={`Edit ${campaign.subject}`} disabled={isMutating} onClick={() => onEdit(campaign)}>
+        <Pencil className="h-4 w-4" aria-hidden="true" />
+      </IconButton>
+      <IconButton label={`Simulate send ${campaign.subject}`} disabled={isMutating} onClick={() => onSend(campaign)}>
+        <Send className="h-4 w-4" aria-hidden="true" />
+        <span className="sr-only">{isSending ? 'Sending' : 'Send'}</span>
+      </IconButton>
+    </div>
   );
 }
 
