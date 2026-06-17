@@ -74,7 +74,7 @@ type SignupFormRow = {
   slug: string;
   heading: string;
   button_text: string;
-  success_message: string;
+  success_message: string | null;
   background_color: string;
   text_color: string;
   button_color: string;
@@ -569,7 +569,7 @@ export class SupabaseSignupFormRepository implements SignupFormRepository {
         slug: input.slug,
         heading: input.heading,
         button_text: input.buttonText,
-        success_message: input.successMessage,
+        success_message: input.successMessage?.trim() || null,
         background_color: input.backgroundColor,
         text_color: input.textColor,
         button_color: input.buttonColor,
@@ -595,7 +595,7 @@ export class SupabaseSignupFormRepository implements SignupFormRepository {
         slug: input.slug,
         heading: input.heading,
         button_text: input.buttonText,
-        success_message: input.successMessage,
+        success_message: input.successMessage?.trim() || null,
         background_color: input.backgroundColor,
         text_color: input.textColor,
         button_color: input.buttonColor,

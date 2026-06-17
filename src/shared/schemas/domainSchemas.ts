@@ -36,7 +36,7 @@ export const signupFormInputSchema = z.object({
     .regex(/^[a-z0-9-]+$/, 'Use lowercase letters, numbers, and hyphens only'),
   heading: z.string().trim().min(1, 'Heading is required'),
   buttonText: z.string().trim().min(1, 'Button text is required'),
-  successMessage: z.string().trim().min(1, 'Success message is required'),
+  successMessage: z.string().trim().max(300, 'Success message must be 300 characters or less').nullable().optional(),
   backgroundColor: hexColorSchema,
   textColor: hexColorSchema,
   buttonColor: hexColorSchema,

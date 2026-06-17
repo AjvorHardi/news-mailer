@@ -36,7 +36,7 @@ export type SignupForm = {
   slug: string;
   heading: string;
   buttonText: string;
-  successMessage: string;
+  successMessage: string | null;
   backgroundColor: string;
   textColor: string;
   buttonColor: string;

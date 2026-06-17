@@ -15,7 +15,7 @@ type PublicSubscribeRequest = {
 type SignupFormRow = {
   id: string;
   newsletter_id: string;
-  success_message: string;
+  success_message: string | null;
 };
 
 type SubscriberRow = {
@@ -39,6 +39,10 @@ function normalizeEmail(email: string) {
 
 function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function getSuccessMessage(form: SignupFormRow) {
+  return form.success_message?.trim() || 'You are subscribed.';
 }
 
 Deno.serve(async (request) => {
@@ -140,7 +144,7 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Subscription could not be completed' }, 500);
     }
 
-    return jsonResponse({ ok: true, status: 'resubscribed', message: form.success_message });
+    return jsonResponse({ ok: true, status: 'resubscribed', message: getSuccessMessage(form) });
   }
 
   const { error: insertError } = await supabase.from('subscribers').insert({
@@ -160,5 +164,5 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: 'Subscription could not be completed' }, 500);
   }
 
-  return jsonResponse({ ok: true, status: 'subscribed', message: form.success_message });
+  return jsonResponse({ ok: true, status: 'subscribed', message: getSuccessMessage(form) });
 });

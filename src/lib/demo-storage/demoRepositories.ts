@@ -305,6 +305,7 @@ class DemoSignupFormRepository implements SignupFormRepository {
       const timestamp = now();
       const form: SignupForm = {
         ...input,
+        successMessage: input.successMessage?.trim() || null,
         id: createId('form'),
         newsletterId,
         createdAt: timestamp,
@@ -328,7 +329,7 @@ class DemoSignupFormRepository implements SignupFormRepository {
         throw new Error('Signup form slug already exists');
       }
 
-      Object.assign(form, input, { updatedAt: now() });
+      Object.assign(form, input, { successMessage: input.successMessage?.trim() || null, updatedAt: now() });
       return form;
     });
   }
