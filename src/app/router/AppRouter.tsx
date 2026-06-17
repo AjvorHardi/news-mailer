@@ -16,14 +16,9 @@ import { DemoWorkspaceRoute } from '../../features/demo/DemoWorkspaceRoute';
 import { MarketingHomePage } from '../../features/marketing/MarketingHomePage';
 import { PublicSubscribePage } from '../../features/public-subscribe/PublicSubscribePage';
 import { PublicUnsubscribePage } from '../../features/public-unsubscribe/PublicUnsubscribePage';
-import { ActivityPage } from '../../features/activity/ActivityPage';
-import { CampaignsPage } from '../../features/campaigns/CampaignsPage';
-import { FormsPage } from '../../features/forms/FormsPage';
 import { NewsletterOverviewPage } from '../../features/newsletters/NewsletterOverviewPage';
 import { NewsletterSelectPage } from '../../features/newsletters/NewsletterSelectPage';
-import { SegmentsPage } from '../../features/segments/SegmentsPage';
 import { SettingsPage } from '../../features/settings/SettingsPage';
-import { SubscribersPage } from '../../features/subscribers/SubscribersPage';
 
 export function AppRouter() {
   return (
@@ -58,11 +53,11 @@ export function AppRouter() {
           <Route index element={<NewsletterSelectPage />} />
           <Route path="newsletters/:newsletterId">
             <Route index element={<NewsletterOverviewPage />} />
-            <Route path="subscribers" element={<SubscribersPage />} />
-            <Route path="forms" element={<FormsPage />} />
-            <Route path="segments" element={<SegmentsPage />} />
-            <Route path="campaigns" element={<CampaignsPage />} />
-            <Route path="activity" element={<ActivityPage />} />
+            <Route path="subscribers" element={<DemoSubscribersPage />} />
+            <Route path="forms" element={<DemoSignupFormsPage />} />
+            <Route path="segments" element={<DemoSegmentsPage />} />
+            <Route path="campaigns" element={<DemoCampaignsPage />} />
+            <Route path="activity" element={<DemoActivityPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>

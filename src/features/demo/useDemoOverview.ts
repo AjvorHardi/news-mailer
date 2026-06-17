@@ -14,10 +14,10 @@ export type DemoOverviewData = {
 };
 
 export function useDemoOverview() {
-  const { newsletterId, repositories } = useDemoWorkspace();
+  const { mode, newsletterId, repositories } = useDemoWorkspace();
 
   return useQuery({
-    queryKey: ['demo', 'overview', newsletterId],
+    queryKey: [mode, 'overview', newsletterId],
     queryFn: async (): Promise<DemoOverviewData> => {
       const [newsletter, subscribers, forms, campaigns] = await Promise.all([
         repositories.newsletters.get(newsletterId),
@@ -27,7 +27,7 @@ export function useDemoOverview() {
       ]);
 
       if (!newsletter) {
-        throw new Error('Demo newsletter not found');
+        throw new Error('Newsletter not found');
       }
 
       const recentCampaigns = [...campaigns]

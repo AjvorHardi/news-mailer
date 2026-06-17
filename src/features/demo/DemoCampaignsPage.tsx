@@ -83,8 +83,8 @@ export function DemoCampaignsPage() {
       const result = await sendCampaign.mutateAsync(campaign.id);
       setSendResultMessage(
         result.recipients.length > 0
-          ? `Simulated send created ${result.recipients.length} recipient snapshots for "${result.campaign.subject}".`
-          : `No subscribed recipients matched "${result.campaign.subject}", so the simulated send was marked failed.`,
+          ? `Send created ${result.recipients.length} recipient snapshots for "${result.campaign.subject}".`
+          : `No subscribed recipients matched "${result.campaign.subject}", so the send was marked failed.`,
       );
     } finally {
       setSendingCampaignId(null);
@@ -95,9 +95,9 @@ export function DemoCampaignsPage() {
     <div className="space-y-8">
       <PageHeader
         actionsLayout="responsive-inline"
-        eyebrow="Demo campaigns"
+        eyebrow="Campaigns"
         title="Campaign drafts"
-        description="Create newsletter drafts, choose an audience, and compose content before simulated sending is added."
+        description="Create newsletter drafts, choose an audience, and compose content."
         actions={
           <Button
             type="button"
@@ -150,7 +150,7 @@ export function DemoCampaignsPage() {
       {campaignsQuery.isError || subscribersQuery.isError || segmentsQuery.isError ? (
         <EmptyState
           title="Campaigns could not be loaded"
-          description="Return to the demo overview if you need to restore all seeded demo data."
+          description="Refresh the workspace and try again."
         />
       ) : null}
 
@@ -433,7 +433,7 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit,
         <h2 className="font-display text-base font-semibold text-neutral-950">
           {campaign ? 'Edit draft campaign' : 'Create draft campaign'}
         </h2>
-        <p className="mt-1 text-sm text-neutral-500">Drafts are saved locally in demo mode. Sending is added in Phase 8.</p>
+        <p className="mt-1 text-sm text-neutral-500">Drafts are saved to the current workspace.</p>
       </div>
 
       <form
@@ -544,7 +544,7 @@ function CampaignAudienceSelector({
       <div className="flex flex-col gap-3 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between">
         <div>
           <h3 className="font-display text-sm font-semibold text-neutral-950">Audience</h3>
-          <p className="mt-1 text-xs text-neutral-500">Only subscribed demo subscribers are counted.</p>
+          <p className="mt-1 text-xs text-neutral-500">Only subscribed subscribers are counted.</p>
         </div>
         <div className="font-mono-ui text-2xl font-semibold text-neutral-950">
           {isCountLoading ? '...' : count ?? 0}

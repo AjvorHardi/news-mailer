@@ -76,9 +76,9 @@ export function DemoSegmentsPage() {
     <div className="space-y-8">
       <PageHeader
         actionsLayout="responsive-inline"
-        eyebrow="Demo segments"
+        eyebrow="Segments"
         title="Audience segments"
-        description="Build explainable demo audiences from safe predefined rule rows."
+        description="Build explainable audiences from safe predefined rule rows."
         actions={
           <Button
             type="button"
@@ -125,7 +125,7 @@ export function DemoSegmentsPage() {
       {segmentsQuery.isError || formsQuery.isError ? (
         <EmptyState
           title="Segments could not be loaded"
-          description="Return to the demo overview if you need to restore all seeded demo data."
+          description="Refresh the workspace and try again."
         />
       ) : null}
 
@@ -428,7 +428,7 @@ function DemoSegmentEditor({ error, forms, isSubmitting, onCancel, onSubmit, seg
           <div className="flex flex-col gap-3 min-[560px]:flex-row min-[560px]:items-center min-[560px]:justify-between">
             <div>
               <h3 className="font-display text-sm font-semibold text-neutral-950">Estimated audience</h3>
-              <p className="mt-1 text-xs text-neutral-500">Matched against current demo subscribers.</p>
+              <p className="mt-1 text-xs text-neutral-500">Matched against current subscribers.</p>
             </div>
             <div className="font-mono-ui text-2xl font-semibold text-neutral-950">
               {matchCountQuery.isLoading ? '...' : matchCountQuery.data ?? 0}

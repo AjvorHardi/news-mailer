@@ -95,9 +95,9 @@ export function DemoSignupFormsPage() {
     <div className="space-y-8">
       <PageHeader
         actionsLayout="responsive-inline"
-        eyebrow="Demo forms"
+        eyebrow="Forms"
         title="Signup forms"
-        description="Manage local demo signup forms and preview the public subscription copy before real subscribe behavior is added."
+        description="Manage signup forms and preview the public subscription copy."
         actions={
           <Button
             type="button"
@@ -144,7 +144,7 @@ export function DemoSignupFormsPage() {
       {formsQuery.isError ? (
         <EmptyState
           title="Signup forms could not be loaded"
-          description="Return to the demo overview if you need to restore all seeded demo data."
+          description="Refresh the workspace and try again."
         />
       ) : null}
 
@@ -378,7 +378,7 @@ function DemoSignupFormEditor({
         <h2 className="font-display text-base font-semibold text-neutral-950">
           {form ? 'Edit signup form' : 'Create signup form'}
         </h2>
-        <p className="mt-1 text-sm text-neutral-500">Form changes are stored in localStorage for demo mode.</p>
+        <p className="mt-1 text-sm text-neutral-500">Form changes are saved to the current workspace.</p>
       </div>
 
       <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>

@@ -99,7 +99,7 @@ export function DemoSubscribersPage() {
     <div className="space-y-8">
       <PageHeader
         actionsLayout="responsive-inline"
-        eyebrow="Demo subscribers"
+        eyebrow="Subscribers"
         title="Subscriber list"
         actions={
           <Button
@@ -153,14 +153,14 @@ export function DemoSubscribersPage() {
       {subscribersQuery.isError || sourceFormsQuery.isError ? (
         <EmptyState
           title="Subscribers could not be loaded"
-          description="Return to the demo overview if you need to restore all seeded demo data."
+          description="Refresh the workspace and try again."
         />
       ) : null}
 
       {subscribersQuery.data && subscribersQuery.data.length === 0 ? (
         <EmptyState
           title="No subscribers yet"
-          description="The add subscriber flow will be enabled in the next Phase 4 milestone."
+          description="Add a subscriber manually or publish a signup form to start growing the list."
         />
       ) : null}
 
@@ -498,7 +498,7 @@ function DemoSubscriberForm({
         <h2 className="font-display text-base font-semibold text-neutral-950">
           {subscriber ? 'Edit subscriber' : 'Add subscriber'}
         </h2>
-        <p className="mt-1 text-sm text-neutral-500">Subscriber changes are stored in localStorage for demo mode.</p>
+        <p className="mt-1 text-sm text-neutral-500">Subscriber changes are saved to the current workspace.</p>
       </div>
 
       <form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={handleSubmit(onSubmit)}>

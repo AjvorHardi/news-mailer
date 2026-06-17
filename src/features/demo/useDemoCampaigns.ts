@@ -4,80 +4,87 @@ import type { Campaign, Id, Segment, Subscriber } from '../../shared/types/domai
 import { subscriberMatchesRules } from '../../lib/demo-storage';
 import { useDemoWorkspace } from './demoWorkspaceContext';
 
-function demoOverviewQueryKey(newsletterId: Id) {
-  return ['demo', 'overview', newsletterId] as const;
+type WorkspaceMode = 'app' | 'demo';
+
+function demoOverviewQueryKey(mode: WorkspaceMode, newsletterId: Id) {
+  return [mode, 'overview', newsletterId] as const;
 }
 
-function demoCampaignsQueryKey(newsletterId: Id) {
-  return ['demo', 'campaigns', newsletterId] as const;
+function demoCampaignsQueryKey(mode: WorkspaceMode, newsletterId: Id) {
+  return [mode, 'campaigns', newsletterId] as const;
 }
 
-function demoCampaignQueryKey(newsletterId: Id, campaignId: Id) {
-  return ['demo', 'campaigns', newsletterId, campaignId] as const;
+function demoCampaignQueryKey(mode: WorkspaceMode, newsletterId: Id, campaignId: Id) {
+  return [mode, 'campaigns', newsletterId, campaignId] as const;
 }
 
-function demoCampaignRecipientCountQueryKey(newsletterId: Id, audienceType: Campaign['audienceType'], segmentId: Id | null) {
-  return ['demo', 'campaigns', newsletterId, 'recipient-count', audienceType, segmentId] as const;
+function demoCampaignRecipientCountQueryKey(
+  mode: WorkspaceMode,
+  newsletterId: Id,
+  audienceType: Campaign['audienceType'],
+  segmentId: Id | null,
+) {
+  return [mode, 'campaigns', newsletterId, 'recipient-count', audienceType, segmentId] as const;
 }
 
-function demoActivityQueryKey(newsletterId: Id) {
-  return ['demo', 'activity', newsletterId] as const;
+function demoActivityQueryKey(mode: WorkspaceMode, newsletterId: Id) {
+  return [mode, 'activity', newsletterId] as const;
 }
 
 export function useDemoCampaigns() {
-  const { newsletterId, repositories } = useDemoWorkspace();
+  const { mode, newsletterId, repositories } = useDemoWorkspace();
 
   return useQuery({
-    queryKey: demoCampaignsQueryKey(newsletterId),
+    queryKey: demoCampaignsQueryKey(mode, newsletterId),
     queryFn: () => repositories.campaigns.list(newsletterId),
   });
 }
 
 export function useDemoCampaign(campaignId: Id | null) {
-  const { newsletterId, repositories } = useDemoWorkspace();
+  const { mode, newsletterId, repositories } = useDemoWorkspace();
 
   return useQuery({
-    queryKey: campaignId ? demoCampaignQueryKey(newsletterId, campaignId) : ['demo', 'campaigns', newsletterId, 'missing'],
+    queryKey: campaignId ? demoCampaignQueryKey(mode, newsletterId, campaignId) : [mode, 'campaigns', newsletterId, 'missing'],
     queryFn: () => repositories.campaigns.get(newsletterId, campaignId ?? ''),
     enabled: Boolean(campaignId),
   });
 }
 
 export function useSaveDemoCampaignDraft() {
-  const { newsletterId, repositories } = useDemoWorkspace();
+  const { mode, newsletterId, repositories } = useDemoWorkspace();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ campaignId, input }: { campaignId?: Id; input: SaveCampaignInput }) =>
       repositories.campaigns.saveDraft(newsletterId, input, campaignId),
     onSuccess: (campaign) => {
-      void queryClient.invalidateQueries({ queryKey: demoCampaignsQueryKey(newsletterId) });
-      void queryClient.invalidateQueries({ queryKey: demoCampaignQueryKey(newsletterId, campaign.id) });
-      void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignsQueryKey(mode, newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignQueryKey(mode, newsletterId, campaign.id) });
+      void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(mode, newsletterId) });
     },
   });
 }
 
 export function useSendDemoCampaign() {
-  const { newsletterId, repositories } = useDemoWorkspace();
+  const { mode, newsletterId, repositories } = useDemoWorkspace();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (campaignId: Id) => repositories.campaigns.send(newsletterId, campaignId),
     onSuccess: ({ campaign }) => {
-      void queryClient.invalidateQueries({ queryKey: demoCampaignsQueryKey(newsletterId) });
-      void queryClient.invalidateQueries({ queryKey: demoCampaignQueryKey(newsletterId, campaign.id) });
-      void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(newsletterId) });
-      void queryClient.invalidateQueries({ queryKey: demoActivityQueryKey(newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignsQueryKey(mode, newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoCampaignQueryKey(mode, newsletterId, campaign.id) });
+      void queryClient.invalidateQueries({ queryKey: demoOverviewQueryKey(mode, newsletterId) });
+      void queryClient.invalidateQueries({ queryKey: demoActivityQueryKey(mode, newsletterId) });
     },
   });
 }
 
 export function useDemoCampaignRecipientCount(audienceType: Campaign['audienceType'], segmentId: Id | null) {
-  const { newsletterId, repositories } = useDemoWorkspace();
+  const { mode, newsletterId, repositories } = useDemoWorkspace();
 
   return useQuery({
-    queryKey: demoCampaignRecipientCountQueryKey(newsletterId, audienceType, segmentId),
+    queryKey: demoCampaignRecipientCountQueryKey(mode, newsletterId, audienceType, segmentId),
     queryFn: async () => {
       const [subscribers, segments] = await Promise.all([
         repositories.subscribers.list(newsletterId),
