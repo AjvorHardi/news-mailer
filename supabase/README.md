@@ -22,7 +22,7 @@ supabase functions deploy unsubscribe
 supabase functions deploy send-campaign
 supabase functions deploy get-public-form
 supabase functions deploy public-subscribe
-supabase functions deploy resend-webhook
+supabase functions deploy resend-webhook --no-verify-jwt
 ```
 
 ## Safety Rules
@@ -69,7 +69,7 @@ Copy the webhook signing secret from the Resend webhook details page and set it 
 
 ```bash
 supabase secrets set RESEND_WEBHOOK_SECRET=...
-supabase functions deploy resend-webhook
+supabase functions deploy resend-webhook --no-verify-jwt
 ```
 
 Manual check:
