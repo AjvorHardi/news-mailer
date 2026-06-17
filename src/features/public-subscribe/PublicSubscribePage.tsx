@@ -105,6 +105,7 @@ export function PublicSubscribePage() {
   const textColor = form?.textColor ?? '#171717';
   const buttonColor = form?.buttonColor ?? '#171717';
   const buttonTextColor = form?.buttonTextColor ?? '#ffffff';
+  const isSubmitDisabled = subscribe.isPending || !isSupabaseConfigured;
 
   return (
     <section
@@ -125,7 +126,7 @@ export function PublicSubscribePage() {
         ) : null}
 
         {formQuery.isLoading ? (
-          <PublicSubscribeMessage title="Loading signup form" description="Preparing this newsletter signup form." />
+          <PublicSubscribeMessage title="Loading signup form" description="Preparing this newsletter signup form." tone="status" />
         ) : null}
 
         {formQuery.isError ? (
@@ -153,14 +154,15 @@ export function PublicSubscribePage() {
                 </div>
 
                 {subscribe.error ? (
-                  <div className="rounded-lg border border-red-200 bg-white p-4 text-sm text-red-600">
+                  <div className="rounded-lg border border-red-200 bg-white p-4 text-sm text-red-600" role="alert">
                     {subscribe.error.message}
                   </div>
                 ) : null}
 
                 <Button
                   type="submit"
-                  disabled={subscribe.isPending}
+                  className="w-full sm:w-auto"
+                  disabled={isSubmitDisabled}
                   style={{ backgroundColor: buttonColor, color: buttonTextColor }}
                 >
                   {subscribe.isPending ? 'Subscribing...' : form.buttonText}
@@ -177,11 +179,16 @@ export function PublicSubscribePage() {
 type PublicSubscribeMessageProps = {
   title: string;
   description: string;
+  tone?: 'default' | 'status';
 };
 
-function PublicSubscribeMessage({ description, title }: PublicSubscribeMessageProps) {
+function PublicSubscribeMessage({ description, title, tone = 'default' }: PublicSubscribeMessageProps) {
   return (
-    <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-4 text-neutral-800">
+    <div
+      className="mt-4 rounded-lg border border-neutral-200 bg-white p-4 text-neutral-800"
+      role={tone === 'status' ? 'status' : undefined}
+      aria-live={tone === 'status' ? 'polite' : undefined}
+    >
       <h2 className="font-display text-base font-semibold">{title}</h2>
       <p className="mt-1 text-sm leading-6 text-neutral-600">{description}</p>
     </div>
