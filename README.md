@@ -1,73 +1,68 @@
-# React + TypeScript + Vite
+# NEWS-MAILER
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+NEWS-MAILER is a portfolio SaaS MVP for managing newsletter subscribers, public signup forms, dynamic segments, campaign drafts, email sends, and delivery activity.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- React, Vite, TypeScript, Tailwind CSS
+- React Router
+- TanStack Query
+- React Hook Form and Zod
+- Supabase Auth, Postgres, RLS, Edge Functions
+- Resend
+- TipTap
 
-## React Compiler
+## Demo Walkthrough
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Use `/demo` for a no-login recruiter walkthrough. Demo mode uses seeded localStorage data and never calls Supabase or Resend.
 
-## Expanding the ESLint configuration
+Suggested path:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+1. Open `/demo`.
+2. Review overview counts and reset behavior.
+3. Add or edit a subscriber.
+4. Create a signup form and inspect the live preview.
+5. Build a segment and watch the match count update.
+6. Create a campaign draft.
+7. Send the demo campaign and review Activity.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Authenticated App Walkthrough
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Use `/app` for the real Supabase-backed workspace.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Suggested path:
+
+1. Register or log in.
+2. Create a newsletter.
+3. Add subscribers and signup forms.
+4. Open `/subscribe/:formSlug` in a logged-out browser and subscribe publicly.
+5. Create a segment.
+6. Create and send a campaign.
+7. Review Activity as Resend webhooks update delivery status.
+
+Email sending is portfolio-safe: real sends are restricted to the logged-in user's own email. Other recipients are snapshotted as failed/skipped so the activity flow can be reviewed without emailing arbitrary addresses.
+
+## Local Development
+
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Required browser env:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
 ```
+
+Supabase function setup and Resend secret notes are in `supabase/README.md`.
+
+## Verification
+
+```bash
+npm run lint
+npm run build
+```
+
+The production build currently reports a known chunk-size warning from the TipTap editor bundle.
