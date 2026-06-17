@@ -128,9 +128,6 @@ Deno.serve(async (request) => {
     const { error: updateError } = await supabase
       .from('subscribers')
       .update({
-        email,
-        email_normalized: emailNormalized,
-        name,
         status: 'subscribed',
         source_form_id: form.id,
         unsubscribed_at: null,
