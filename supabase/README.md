@@ -9,6 +9,7 @@ Set these in the linked Supabase project before testing real sends:
 ```bash
 supabase secrets set RESEND_API_KEY=...
 supabase secrets set RESEND_FROM_EMAIL="NEWS-MAILER <onboarding@resend.dev>"
+supabase secrets set RESEND_WEBHOOK_SECRET=...
 supabase secrets set APP_ORIGIN="http://localhost:5173"
 ```
 
@@ -21,6 +22,7 @@ supabase functions deploy unsubscribe
 supabase functions deploy send-campaign
 supabase functions deploy get-public-form
 supabase functions deploy public-subscribe
+supabase functions deploy resend-webhook --no-verify-jwt
 ```
 
 ## Safety Rules
@@ -34,7 +36,9 @@ supabase functions deploy public-subscribe
 - Public subscribe uses Edge Functions instead of anonymous table selects/inserts.
 - `get-public-form` exposes only safe active form copy and color fields.
 - `public-subscribe` creates or resubscribes a subscriber by normalized email and records `source_form_id`.
-- Delivery webhooks are not implemented in this phase.
+- `resend-webhook` verifies Svix webhook signatures before processing delivery updates.
+- Webhook events are stored in `webhook_events` using Resend's `svix-id` for idempotency.
+- Delivery webhooks update `campaign_recipients` by `provider_message_id`.
 
 ## Public Subscribe Checks
 
@@ -44,3 +48,34 @@ supabase functions deploy public-subscribe
 - Submit the same email again and confirm no duplicate row is created.
 - Unsubscribe that email, submit it again, and confirm it becomes subscribed.
 - Deactivate the form and confirm the public route shows an unavailable state.
+
+## Resend Webhook Setup
+
+In the Resend dashboard, add a webhook endpoint with this URL shape:
+
+```text
+https://<project-ref>.supabase.co/functions/v1/resend-webhook
+```
+
+Select these email events for the MVP:
+
+- `email.delivered`
+- `email.bounced`
+- `email.failed`
+- `email.suppressed`
+- `email.complained`
+
+Copy the webhook signing secret from the Resend webhook details page and set it in Supabase:
+
+```bash
+supabase secrets set RESEND_WEBHOOK_SECRET=...
+supabase functions deploy resend-webhook --no-verify-jwt
+```
+
+Manual check:
+
+- Send a campaign to the logged-in user's email.
+- Confirm Activity first shows `sent`.
+- Wait for Resend to send webhook events.
+- Refresh Activity and confirm recipient status changes to `delivered`, `bounced`, or `failed`.
+- Confirm `webhook_events` contains the raw Resend event.
