@@ -85,6 +85,7 @@ export function AppLayout() {
         basePath={`/app/newsletters/${newsletterId}`}
         footerLabel={user?.email ?? 'Authenticated workspace'}
         footerAction={footerAction}
+        workspaceListPath="/app"
       />
     </DemoWorkspaceContext.Provider>
   );

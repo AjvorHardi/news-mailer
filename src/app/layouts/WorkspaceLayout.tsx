@@ -1,4 +1,4 @@
-import { Menu } from 'lucide-react';
+import { ArrowLeft, Menu } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { NavLink, Outlet } from 'react-router';
@@ -18,9 +18,10 @@ type WorkspaceLayoutProps = {
   footerAction?: ReactNode;
   basePath: string;
   footerLabel: string;
+  workspaceListPath?: string;
 };
 
-export function WorkspaceLayout({ basePath, footerAction, footerLabel }: WorkspaceLayoutProps) {
+export function WorkspaceLayout({ basePath, footerAction, footerLabel, workspaceListPath }: WorkspaceLayoutProps) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
 
@@ -54,6 +55,7 @@ export function WorkspaceLayout({ basePath, footerAction, footerLabel }: Workspa
               footerAction={footerAction}
               footerLabel={footerLabel}
               onClose={() => setIsDesktopSidebarOpen(false)}
+              workspaceListPath={workspaceListPath}
             />
           </aside>
         )}
@@ -78,6 +80,7 @@ export function WorkspaceLayout({ basePath, footerAction, footerLabel }: Workspa
             footerLabel={footerLabel}
             onClose={() => setIsMobileSidebarOpen(false)}
             onNavigate={() => setIsMobileSidebarOpen(false)}
+            workspaceListPath={workspaceListPath}
           />
         </aside>
 
@@ -97,9 +100,10 @@ type SidebarContentProps = {
   footerLabel: string;
   onClose: () => void;
   onNavigate?: () => void;
+  workspaceListPath?: string;
 };
 
-function SidebarContent({ basePath, footerAction, footerLabel, onClose, onNavigate }: SidebarContentProps) {
+function SidebarContent({ basePath, footerAction, footerLabel, onClose, onNavigate, workspaceListPath }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center border-b border-neutral-200 px-4">
@@ -108,6 +112,19 @@ function SidebarContent({ basePath, footerAction, footerLabel, onClose, onNaviga
         </SidebarToggleButton>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4">
+        {workspaceListPath ? (
+          <div className="mb-3">
+            <NavLink
+              to={workspaceListPath}
+              end
+              onClick={onNavigate}
+              className="font-display flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-100 hover:text-neutral-950 focus:ring-2 focus:ring-neutral-950 focus:outline-none"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Back to newsletters
+            </NavLink>
+          </div>
+        ) : null}
         {navItems.map((item) => {
           const to = item.path ? `${basePath}/${item.path}` : basePath;
 
