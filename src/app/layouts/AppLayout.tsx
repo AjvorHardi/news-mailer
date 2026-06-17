@@ -1,4 +1,5 @@
 import { Navigate, Outlet, useNavigate, useParams } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { WorkspaceLayout } from './WorkspaceLayout';
 import { Button } from '../../shared/ui/Button';
@@ -13,6 +14,12 @@ export function AppLayout() {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const repositories = useMemo(() => createSupabaseRepositories(), []);
+  const isValidNewsletterRoute = Boolean(newsletterId && uuidPattern.test(newsletterId));
+  const newsletterAccessQuery = useQuery({
+    queryKey: ['app', 'newsletter-access', user?.id, newsletterId],
+    queryFn: () => repositories.newsletters.get(newsletterId ?? ''),
+    enabled: Boolean(user?.id && isValidNewsletterRoute),
+  });
   const footerAction = (
     <Button
       type="button"
@@ -48,6 +55,27 @@ export function AppLayout() {
   }
 
   if (!uuidPattern.test(newsletterId)) {
+    return <Navigate to="/app" replace />;
+  }
+
+  if (newsletterAccessQuery.isLoading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 text-neutral-950">
+        <header className="border-b border-neutral-200 bg-white">
+          <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+            <div>
+              <p className="font-display text-sm font-semibold text-neutral-950">NEWS-MAILER</p>
+              <p className="mt-1 text-sm text-neutral-500">{user?.email ?? 'Authenticated workspace'}</p>
+            </div>
+            <div className="w-full sm:w-auto sm:min-w-32">{footerAction}</div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-6xl px-4 py-8 text-sm text-neutral-600 sm:px-6 lg:px-8">Loading workspace...</main>
+      </div>
+    );
+  }
+
+  if (newsletterAccessQuery.isError || !newsletterAccessQuery.data) {
     return <Navigate to="/app" replace />;
   }
 
