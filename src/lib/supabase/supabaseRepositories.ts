@@ -828,67 +828,19 @@ export class SupabaseCampaignRepository implements CampaignRepository {
 
   async send(newsletterId: Id, campaignId: Id): Promise<SendCampaignResult> {
     const client = requireSupabaseClient();
-    const campaign = await this.get(newsletterId, campaignId);
-
-    if (!campaign) {
-      throw new Error('Campaign not found');
-    }
-
-    if (campaign.status === 'sent') {
-      return {
-        campaign,
-        recipients: await new SupabaseActivityRepository().listRecipients(newsletterId, campaignId),
-      };
-    }
-
-    if (campaign.status !== 'draft') {
-      throw new Error('Campaign cannot be sent from its current status');
-    }
-
-    const segment = campaign.segmentId ? await new SupabaseSegmentRepository().get(newsletterId, campaign.segmentId) : null;
-    const subscribers = (await new SupabaseSubscriberRepository().list(newsletterId)).filter((subscriber) => {
-      if (subscriber.status !== 'subscribed') {
-        return false;
-      }
-
-      if (campaign.audienceType === 'segment') {
-        return segment ? subscriberMatchesRules(subscriber, segment.rules) : false;
-      }
-
-      return true;
+    const { data, error } = await client.functions.invoke<SendCampaignResult>('send-campaign', {
+      body: { newsletterId, campaignId },
     });
 
-    await client.from('campaign_recipients').delete().eq('newsletter_id', newsletterId).eq('campaign_id', campaignId);
-
-    if (subscribers.length > 0) {
-      const { error: recipientsError } = await client.from('campaign_recipients').insert(
-        subscribers.map((subscriber) => ({
-          campaign_id: campaign.id,
-          newsletter_id: newsletterId,
-          subscriber_id: subscriber.id,
-          email: subscriber.email,
-          email_normalized: subscriber.emailNormalized,
-          name: subscriber.name,
-          status: 'pending',
-          provider_message_id: null,
-          failure_reason: null,
-          sent_at: null,
-          delivered_at: null,
-        })),
-      );
-
-      if (recipientsError) {
-        throw recipientsError;
-      }
+    if (error) {
+      throw new Error(error.message || 'Campaign could not be sent');
     }
 
-    const updatedCampaign = await this.setStatus(newsletterId, campaignId, subscribers.length > 0 ? 'sending' : 'failed');
-    const recipients = await new SupabaseActivityRepository().listRecipients(newsletterId, campaignId);
+    if (!data) {
+      throw new Error('Campaign could not be sent');
+    }
 
-    return {
-      campaign: updatedCampaign,
-      recipients,
-    };
+    return data;
   }
 }
 

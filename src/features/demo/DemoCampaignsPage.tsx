@@ -11,6 +11,7 @@ import { PageHeader } from '../../shared/ui/PageHeader';
 import { Input } from '../../shared/ui/Input';
 import { campaignInputSchema } from '../../shared/schemas/domainSchemas';
 import type { Campaign, CampaignAudienceType, Id, Segment, Subscriber } from '../../shared/types/domain';
+import { sanitizeCampaignHtml } from '../../shared/utils/sanitizeCampaignHtml';
 import {
   useDemoCampaigns,
   countCampaignRecipients,
@@ -20,6 +21,7 @@ import {
 } from './useDemoCampaigns';
 import { useDemoSegments } from './useDemoSegments';
 import { useDemoSubscribers } from './useDemoSubscribers';
+import { useDemoWorkspace } from './demoWorkspaceContext';
 import type { z } from 'zod';
 
 const emptySubscribers: Subscriber[] = [];
@@ -39,6 +41,7 @@ type CampaignFormInput = z.input<typeof campaignInputSchema>;
 type CampaignFormValues = z.output<typeof campaignInputSchema>;
 
 export function DemoCampaignsPage() {
+  const { mode } = useDemoWorkspace();
   const campaignsQuery = useDemoCampaigns();
   const subscribersQuery = useDemoSubscribers();
   const segmentsQuery = useDemoSegments();
@@ -81,11 +84,22 @@ export function DemoCampaignsPage() {
 
     try {
       const result = await sendCampaign.mutateAsync(campaign.id);
-      setSendResultMessage(
-        result.recipients.length > 0
-          ? `Send created ${result.recipients.length} recipient snapshots for "${result.campaign.subject}".`
-          : `No subscribed recipients matched "${result.campaign.subject}", so the send was marked failed.`,
-      );
+      const sentCount = result.recipients.filter((recipient) => recipient.status === 'sent').length;
+      const failedCount = result.recipients.filter((recipient) => recipient.status === 'failed').length;
+
+      if (mode === 'app') {
+        setSendResultMessage(
+          sentCount > 0
+            ? `Send accepted ${sentCount} email for "${result.campaign.subject}". ${failedCount} recipient(s) were skipped or failed.`
+            : `No emails were accepted for "${result.campaign.subject}". Check recipient safety limits and activity details.`,
+        );
+      } else {
+        setSendResultMessage(
+          result.recipients.length > 0
+            ? `Send created ${result.recipients.length} recipient snapshots for "${result.campaign.subject}".`
+            : `No subscribed recipients matched "${result.campaign.subject}", so the send was marked failed.`,
+        );
+      }
     } finally {
       setSendingCampaignId(null);
     }
@@ -442,7 +456,7 @@ function DemoCampaignEditor({ campaign, error, isSubmitting, onCancel, onSubmit,
           onSubmit({
             ...values,
             bodyJson: editor?.getJSON() ?? values.bodyJson,
-            bodyHtml: editor?.getHTML() ?? values.bodyHtml,
+            bodyHtml: sanitizeCampaignHtml(editor?.getHTML() ?? values.bodyHtml),
             audienceType,
             segmentId: audienceType === 'segment' ? segmentId : null,
           }),
