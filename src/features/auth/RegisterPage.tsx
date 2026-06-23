@@ -85,10 +85,15 @@ export function RegisterPage() {
           setAuthError(null);
 
           try {
-            const result = await signUp(values.email, values.password, {
-              subscriberLimit,
-              selectedPlan,
-            });
+            const result = await signUp(
+              values.email,
+              values.password,
+              {
+                subscriberLimit,
+                selectedPlan,
+              },
+              `${window.location.origin}/app`,
+            );
 
             if (result.needsEmailConfirmation) {
               setConfirmationEmail(values.email);
