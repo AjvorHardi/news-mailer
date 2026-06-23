@@ -305,6 +305,7 @@ class DemoSignupFormRepository implements SignupFormRepository {
       const timestamp = now();
       const form: SignupForm = {
         ...input,
+        successMessage: input.successMessage?.trim() || null,
         id: createId('form'),
         newsletterId,
         createdAt: timestamp,
@@ -328,7 +329,7 @@ class DemoSignupFormRepository implements SignupFormRepository {
         throw new Error('Signup form slug already exists');
       }
 
-      Object.assign(form, input, { updatedAt: now() });
+      Object.assign(form, input, { successMessage: input.successMessage?.trim() || null, updatedAt: now() });
       return form;
     });
   }
@@ -505,11 +506,11 @@ class DemoCampaignRepository implements CampaignRepository {
         email: subscriber.email,
         emailNormalized: subscriber.emailNormalized,
         name: subscriber.name,
-        status: index % 4 === 0 ? 'delivered' : 'sent',
+        status: index % 2 === 0 ? 'delivered' : 'sent',
         providerMessageId: `demo-message-${campaign.id}-${subscriber.id}`,
         failureReason: null,
         sentAt: timestamp,
-        deliveredAt: index % 4 === 0 ? timestamp : null,
+        deliveredAt: index % 2 === 0 ? timestamp : null,
         createdAt: timestamp,
       }));
 

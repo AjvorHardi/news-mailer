@@ -100,10 +100,12 @@ function ActivityStatsGrid({ stats }: { stats: ActivityStats }) {
 function RecentSentCampaigns({ campaigns }: { campaigns: Campaign[] }) {
   return (
     <section className="rounded-lg border border-neutral-200 bg-white">
-      <div className="border-b border-neutral-200 px-5 py-4">
-        <h2 className="font-display text-base font-semibold text-neutral-950">Recent sent campaigns</h2>
-        <p className="mt-1 text-sm text-neutral-500">Simulated sends only. No email provider is called.</p>
-      </div>
+        <div className="border-b border-neutral-200 px-5 py-4">
+          <h2 className="font-display text-base font-semibold text-neutral-950">Recent sent campaigns</h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          Simulated sends only. Every other recipient is marked delivered so the activity states are easy to review.
+        </p>
+        </div>
       <div className="divide-y divide-neutral-200">
         {campaigns.map((campaign) => (
           <div key={campaign.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">

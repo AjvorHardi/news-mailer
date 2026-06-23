@@ -91,7 +91,7 @@ export function DemoOverviewPage() {
       <section className="rounded-lg border border-neutral-200 bg-white">
         <div className="border-b border-neutral-200 px-5 py-4">
           <h2 className="font-display text-base font-semibold text-neutral-950">Recent campaigns</h2>
-          <p className="mt-1 text-sm text-neutral-500">Seeded draft and sent campaigns will appear here.</p>
+          <p className="mt-1 text-sm text-neutral-500">Latest drafts and sent campaigns in this workspace.</p>
         </div>
         {overview.recentCampaigns.length > 0 ? (
           <div className="divide-y divide-neutral-200">
@@ -109,7 +109,7 @@ export function DemoOverviewPage() {
           </div>
         ) : (
           <div className="p-5">
-            <EmptyState title="No campaigns yet" description="Create a campaign in a later phase to populate this list." />
+            <EmptyState title="No campaigns yet" description="Create a campaign draft to populate this list." />
           </div>
         )}
       </section>

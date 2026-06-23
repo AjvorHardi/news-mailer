@@ -14,7 +14,7 @@ type SignupFormRow = {
   slug: string;
   heading: string;
   button_text: string;
-  success_message: string;
+  success_message: string | null;
   background_color: string;
   text_color: string;
   button_color: string;

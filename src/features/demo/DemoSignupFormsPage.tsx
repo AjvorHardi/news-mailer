@@ -40,7 +40,7 @@ const defaultFormValues: SignupFormInput = {
   slug: '',
   heading: '',
   buttonText: 'Subscribe',
-  successMessage: 'Thanks for subscribing.',
+  successMessage: '',
   backgroundColor: '#ffffff',
   textColor: '#171717',
   buttonColor: '#171717',
@@ -126,10 +126,15 @@ export function DemoSignupFormsPage() {
           isSubmitting={createForm.isPending || updateForm.isPending}
           onCancel={closeEditor}
           onSubmit={async (values) => {
+            const input = {
+              ...values,
+              successMessage: values.successMessage?.trim() || null,
+            };
+
             if (editingForm) {
-              await updateForm.mutateAsync({ formId: editingForm.id, input: values });
+              await updateForm.mutateAsync({ formId: editingForm.id, input });
             } else {
-              await createForm.mutateAsync(values);
+              await createForm.mutateAsync(input);
             }
 
             closeEditor();
@@ -361,7 +366,7 @@ function DemoSignupFormEditor({
           slug: form.slug,
           heading: form.heading,
           buttonText: form.buttonText,
-          successMessage: form.successMessage,
+          successMessage: form.successMessage ?? '',
           backgroundColor: form.backgroundColor,
           textColor: form.textColor,
           buttonColor: form.buttonColor,
@@ -404,7 +409,7 @@ function DemoSignupFormEditor({
 
         <div className="md:col-span-2">
           <Input
-            label="Success message"
+            label="Success message (optional)"
             type="text"
             placeholder="Thanks for subscribing."
             {...register('successMessage')}
@@ -480,14 +485,13 @@ function SignupFormPreview({ values }: { values: SignupFormInput }) {
   const slug = values.slug?.trim() || 'form-slug';
   const heading = values.heading?.trim() || 'Signup form heading';
   const buttonText = values.buttonText?.trim() || 'Subscribe';
-  const successMessage = values.successMessage?.trim() || 'Success message';
 
   return (
     <section className="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
       <div className="flex flex-col gap-1 border-b border-neutral-200 pb-3 min-[640px]:flex-row min-[640px]:items-end min-[640px]:justify-between">
         <div>
           <h3 className="font-display text-sm font-semibold text-neutral-950">Live preview</h3>
-          <p className="mt-1 text-xs text-neutral-500">Public subscribe behavior will be wired in a later phase.</p>
+          <p className="mt-1 text-xs text-neutral-500">Public subscribers will see this form at the generated signup URL.</p>
         </div>
         <p className="font-mono-ui text-xs text-neutral-500">/subscribe/{slug}</p>
       </div>
@@ -523,7 +527,6 @@ function SignupFormPreview({ values }: { values: SignupFormInput }) {
               {buttonText}
             </button>
           </div>
-          <p className="mt-4 text-sm">{successMessage}</p>
         </div>
       </div>
     </section>
