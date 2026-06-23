@@ -21,7 +21,7 @@ type ResetPasswordFormInput = z.input<typeof resetPasswordSchema>;
 type ResetPasswordFormValues = z.output<typeof resetPasswordSchema>;
 
 export function ResetPasswordPage() {
-  const { isConfigured, isLoading, signOut, updatePassword, user } = useAuth();
+  const { isConfigured, isLoading, isPasswordRecovery, signOut, updatePassword } = useAuth();
   const navigate = useNavigate();
   const [authError, setAuthError] = useState<string | null>(null);
   const {
@@ -35,7 +35,7 @@ export function ResetPasswordPage() {
       confirmPassword: '',
     },
   });
-  const canUpdate = Boolean(isConfigured && user);
+  const canUpdate = Boolean(isConfigured && isPasswordRecovery);
   const isDisabled = !canUpdate || isLoading || isSubmitting;
 
   return (
@@ -49,7 +49,7 @@ export function ResetPasswordPage() {
         </div>
       ) : null}
 
-      {!isLoading && isConfigured && !user ? (
+      {!isLoading && isConfigured && !isPasswordRecovery ? (
         <div className="mt-5 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
           This reset link is missing, expired, or already used. Request a new password reset link.
         </div>
