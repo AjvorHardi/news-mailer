@@ -56,6 +56,8 @@ VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 ```
 
+Password reset emails require Supabase Auth URL configuration to include the deployed reset route, for example `https://<your-domain>/reset-password`. Keep `http://localhost:5173/reset-password` allowed if you test recovery locally.
+
 Supabase function setup and Resend secret notes are in `supabase/README.md`.
 
 ## Verification
