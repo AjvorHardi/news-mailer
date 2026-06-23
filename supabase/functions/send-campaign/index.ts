@@ -24,6 +24,12 @@ type CampaignRow = {
   updated_at: string;
 };
 
+type NewsletterRow = {
+  id: string;
+  user_id: string;
+  sender_name: string;
+};
+
 type SubscriberRow = {
   id: string;
   newsletter_id: string;
@@ -85,6 +91,14 @@ function escapeHtml(value: string) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#039;');
+}
+
+function formatSenderEmail(senderName: string, configuredFromEmail: string) {
+  const addressMatch = configuredFromEmail.match(/<([^<>]+)>$/);
+  const senderAddress = addressMatch ? addressMatch[1].trim() : configuredFromEmail.trim();
+  const safeSenderName = senderName.replace(/[\r\n<>]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  return `${safeSenderName || 'NEWS-MAILER'} <${senderAddress}>`;
 }
 
 function sanitizeEmailHtml(html: string | null) {
@@ -177,7 +191,7 @@ Deno.serve(async (request) => {
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
-  const fromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'NEWS-MAILER <onboarding@resend.dev>';
+  const configuredFromEmail = Deno.env.get('RESEND_FROM_EMAIL') ?? 'NEWS-MAILER <onboarding@resend.dev>';
   const appOrigin = Deno.env.get('APP_ORIGIN') ?? 'http://localhost:5173';
 
   if (!supabaseUrl || !anonKey || !serviceRoleKey || !resendApiKey) {
@@ -223,7 +237,7 @@ Deno.serve(async (request) => {
 
   const { data: newsletter, error: newsletterError } = await adminClient
     .from('newsletters')
-    .select('id, user_id')
+    .select('id, user_id, sender_name')
     .eq('id', newsletterId)
     .eq('user_id', user.id)
     .maybeSingle();
@@ -236,6 +250,9 @@ Deno.serve(async (request) => {
   if (!newsletter) {
     return jsonResponse({ error: 'Campaign not found' }, 404);
   }
+
+  const newsletterRow = newsletter as NewsletterRow;
+  const fromEmail = formatSenderEmail(newsletterRow.sender_name, configuredFromEmail);
 
   const { data: campaign, error: campaignError } = await adminClient
     .from('campaigns')
