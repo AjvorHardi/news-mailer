@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router';
 import { WorkspaceLayout } from './WorkspaceLayout';
-import { DEMO_NEWSLETTER_ID } from '../../lib/demo-storage';
 import { Button } from '../../shared/ui/Button';
 
 export function DemoLayout() {
@@ -9,7 +8,7 @@ export function DemoLayout() {
   return (
     <WorkspaceLayout
       basePath="/demo"
-      footerLabel={`Demo data: ${DEMO_NEWSLETTER_ID}`}
+      footerLabel="DEMO WORKSPACE"
       footerAction={
         <Button
           type="button"
