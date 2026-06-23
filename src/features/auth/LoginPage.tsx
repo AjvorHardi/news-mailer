@@ -20,6 +20,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [authError, setAuthError] = useState<string | null>(null);
+  const didResetPassword = hasPasswordResetState(location.state);
   const {
     formState: { errors },
     handleSubmit,
@@ -42,6 +43,12 @@ export function LoginPage() {
     <section className="w-full rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
       <h1 className="font-display text-2xl font-semibold text-neutral-950">Log in</h1>
       <p className="mt-2 text-sm leading-6 text-neutral-600">Use your Supabase Auth email and password.</p>
+
+      {didResetPassword ? (
+        <div className="mt-5 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
+          Your password was updated. Log in with the new password.
+        </div>
+      ) : null}
 
       {!isConfigured ? (
         <div className="mt-5 rounded-md border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
@@ -67,8 +74,17 @@ export function LoginPage() {
           {errors.email ? <p className="mt-2 text-sm text-red-600">{errors.email.message}</p> : null}
         </div>
         <div>
-          <Input label="Password" type="password" placeholder="Password" disabled={!isConfigured || isLoading} {...register('password')} />
+          <Input
+            label="Password"
+            type="password"
+            placeholder="Password"
+            disabled={!isConfigured || isLoading}
+            {...register('password')}
+          />
           {errors.password ? <p className="mt-2 text-sm text-red-600">{errors.password.message}</p> : null}
+          <Link to="/forgot-password" className="mt-2 inline-block text-sm font-medium text-neutral-950 underline underline-offset-4">
+            Forgot password?
+          </Link>
         </div>
         {authError ? <p className="text-sm text-red-600">{authError}</p> : null}
         <Button type="submit" disabled={!isConfigured || isLoading} className="w-full">
@@ -99,4 +115,8 @@ function getRedirectPath(state: unknown) {
   }
 
   return '/app';
+}
+
+function hasPasswordResetState(state: unknown) {
+  return Boolean(state && typeof state === 'object' && 'passwordReset' in state && state.passwordReset === true);
 }

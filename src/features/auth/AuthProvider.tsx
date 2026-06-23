@@ -78,6 +78,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         return { needsEmailConfirmation: !data.session };
       },
+      requestPasswordReset: async (email: string, redirectTo: string) => {
+        const client = requireSupabaseClient();
+        const { error } = await client.auth.resetPasswordForEmail(email, {
+          redirectTo,
+        });
+
+        if (error) {
+          throw error;
+        }
+      },
+      updatePassword: async (password: string) => {
+        const client = requireSupabaseClient();
+        const { error } = await client.auth.updateUser({ password });
+
+        if (error) {
+          throw error;
+        }
+      },
     }),
     [isLoading, session],
   );

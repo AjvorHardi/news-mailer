@@ -5,6 +5,8 @@ import { PublicLayout } from '../layouts/PublicLayout';
 import { ProtectedRoute } from './ProtectedRoute';
 import { LoginPage } from '../../features/auth/LoginPage';
 import { RegisterPage } from '../../features/auth/RegisterPage';
+import { ForgotPasswordPage } from '../../features/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '../../features/auth/ResetPasswordPage';
 import { DemoHomePage } from '../../features/demo/DemoHomePage';
 import { DemoActivityPage } from '../../features/demo/DemoActivityPage';
 import { DemoCampaignsPage } from '../../features/demo/DemoCampaignsPage';
@@ -46,6 +48,8 @@ export function AppRouter() {
       <Route element={<AuthLayout />}>
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>
