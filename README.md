@@ -56,7 +56,7 @@ VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
 ```
 
-Auth emails require Supabase Auth URL configuration to include the deployed app and reset routes, for example `https://<your-domain>/app` and `https://<your-domain>/reset-password`. Keep `http://localhost:5173/app` and `http://localhost:5173/reset-password` allowed if you test auth emails locally.
+Auth emails require Supabase Auth URL configuration to include the deployed app and reset routes: `https://news-mailer-demo.vercel.app/app` and `https://news-mailer-demo.vercel.app/reset-password`. Keep `http://localhost:5173/app` and `http://localhost:5173/reset-password` allowed only if you test auth emails locally.
 
 Supabase function setup and Resend secret notes are in `supabase/README.md`.
 

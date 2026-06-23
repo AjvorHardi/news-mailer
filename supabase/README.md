@@ -10,7 +10,7 @@ Set these in the linked Supabase project before testing real sends:
 supabase secrets set RESEND_API_KEY=...
 supabase secrets set RESEND_FROM_EMAIL="NEWS-MAILER <onboarding@resend.dev>"
 supabase secrets set RESEND_WEBHOOK_SECRET=...
-supabase secrets set APP_ORIGIN="http://localhost:5173"
+supabase secrets set APP_ORIGIN="https://news-mailer-demo.vercel.app"
 ```
 
 Use a verified Resend sender when moving beyond local portfolio testing.
