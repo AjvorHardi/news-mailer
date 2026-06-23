@@ -90,8 +90,8 @@ export function DemoCampaignsPage() {
       if (mode === 'app') {
         setSendResultMessage(
           sentCount > 0
-            ? `Send accepted ${sentCount} email for "${result.campaign.subject}". ${failedCount} recipient(s) were skipped or failed.`
-            : `No emails were accepted for "${result.campaign.subject}". Check recipient safety limits and activity details.`,
+            ? `Sent to your login email. ${failedCount} recipient(s) skipped for testing. Check Activity.`
+            : 'No email matched your login email. Add yourself as a subscriber, then try again.',
         );
       } else {
         setSendResultMessage(

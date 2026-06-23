@@ -2,6 +2,7 @@ import { EmptyState } from '../../shared/ui/EmptyState';
 import { PageHeader } from '../../shared/ui/PageHeader';
 import type { ActivityStats, Campaign, CampaignRecipient } from '../../shared/types/domain';
 import { useDemoActivityCampaigns, useDemoActivityRecipients, useDemoActivityStats } from './useDemoActivity';
+import { useDemoWorkspace } from './demoWorkspaceContext';
 
 const dateFormatter = new Intl.DateTimeFormat('en', {
   month: 'short',
@@ -30,6 +31,7 @@ function formatOptionalDateTime(value: string | null) {
 }
 
 export function DemoActivityPage() {
+  const { mode } = useDemoWorkspace();
   const statsQuery = useDemoActivityStats();
   const recipientsQuery = useDemoActivityRecipients();
   const campaignsQuery = useDemoActivityCampaigns();
@@ -66,7 +68,7 @@ export function DemoActivityPage() {
         />
       ) : null}
 
-      {sentCampaigns.length > 0 ? <RecentSentCampaigns campaigns={sentCampaigns} /> : null}
+      {sentCampaigns.length > 0 ? <RecentSentCampaigns campaigns={sentCampaigns} mode={mode} /> : null}
 
       {recipientsQuery.data && recipientsQuery.data.length > 0 ? (
         <RecipientDeliveryTable campaigns={campaignsQuery.data ?? []} recipients={recipientsQuery.data} />
@@ -97,15 +99,17 @@ function ActivityStatsGrid({ stats }: { stats: ActivityStats }) {
   );
 }
 
-function RecentSentCampaigns({ campaigns }: { campaigns: Campaign[] }) {
+function RecentSentCampaigns({ campaigns, mode }: { campaigns: Campaign[]; mode: 'app' | 'demo' }) {
   return (
     <section className="rounded-lg border border-neutral-200 bg-white">
-        <div className="border-b border-neutral-200 px-5 py-4">
-          <h2 className="font-display text-base font-semibold text-neutral-950">Recent sent campaigns</h2>
+      <div className="border-b border-neutral-200 px-5 py-4">
+        <h2 className="font-display text-base font-semibold text-neutral-950">Recent sent campaigns</h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Simulated sends only. Every other recipient is marked delivered so the activity states are easy to review.
+          {mode === 'demo'
+            ? 'Simulated sends only. Every other recipient is marked delivered for review.'
+            : 'Real sends go only to your login email for testing. Skipped recipients are listed below.'}
         </p>
-        </div>
+      </div>
       <div className="divide-y divide-neutral-200">
         {campaigns.map((campaign) => (
           <div key={campaign.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
