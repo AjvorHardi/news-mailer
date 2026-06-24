@@ -1,6 +1,21 @@
 # NEWS-MAILER
 
-NEWS-MAILER is a portfolio SaaS MVP for managing newsletter subscribers, public signup forms, dynamic segments, campaign drafts, email sends, and delivery activity.
+NEWS-MAILER is a portfolio SaaS MVP for managing newsletter subscribers, public signup forms, dynamic segments, campaign drafts, portfolio-safe email sends, and delivery activity.
+
+Deployed app:
+
+```text
+https://news-mailer-demo.vercel.app
+```
+
+## Product Highlights
+
+- Public no-login demo mode with seeded localStorage data.
+- Supabase Auth workspace for real newsletter data.
+- Newsletter, subscriber, signup form, segment, campaign, and activity workflows.
+- Public subscribe and unsubscribe routes backed by Supabase Edge Functions.
+- Resend campaign sending with recipient snapshots and delivery webhook handling.
+- Portfolio-safe real sends: only the logged-in user's own email receives a real message.
 
 ## Stack
 
@@ -28,7 +43,7 @@ Suggested path:
 
 ## Authenticated App Walkthrough
 
-Use `/app` for the real Supabase-backed workspace.
+Use `/app` for the real Supabase-backed workspace. Create or use a test account, then build one newsletter workspace end to end.
 
 Suggested path:
 
@@ -40,7 +55,9 @@ Suggested path:
 6. Create and send a campaign.
 7. Review Activity as Resend webhooks update delivery status.
 
-Email sending is portfolio-safe: real sends are restricted to the logged-in user's own email. Other recipients are snapshotted as failed/skipped so the activity flow can be reviewed without emailing arbitrary addresses.
+Email sending is portfolio-safe: real sends are restricted to the logged-in user's own email. Other recipients are snapshotted as failed/skipped so the Activity flow can be reviewed without emailing arbitrary addresses.
+
+For a full deployed review checklist, see `DEPLOYED-QA.md`.
 
 ## Local Development
 
